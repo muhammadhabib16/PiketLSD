@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { DATA_ASISTEN } from '../dataAsisten';
 
 const AttendanceContext = createContext(null);
 
@@ -74,7 +73,7 @@ export function AttendanceProvider({ children }) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState(null);
 
-  // Login handler connected directly to backend GAS API (status: "Login") & Master Data
+  // Login handler connected directly to backend GAS API (status: "Login")
   const login = async (nim, pin) => {
     const cleanNim = (nim || '').trim();
     const cleanPin = (pin || '').trim();
@@ -83,11 +82,15 @@ export function AttendanceProvider({ children }) {
       return { success: false, message: 'NIM wajib diisi.' };
     }
     if (!cleanPin) {
-      return { success: false, message: 'Password/PIN wajib diisi.' };
+      return { success: false, message: 'Password wajib diisi.' };
+    }
+
+    if (!endpointUrl) {
+      return { success: false, message: 'Endpoint Google Apps Script belum dikonfigurasi pada VITE_GAS_API_URL di berkas .env.' };
     }
 
     try {
-      // 1. Coba autentikasi online langsung ke Google Apps Script (Tab Master_Asisten Kolom F)
+      // Autentikasi online langsung ke Google Apps Script (Tab Master_Asisten)
       const res = await fetch(endpointUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -102,16 +105,12 @@ export function AttendanceProvider({ children }) {
       const json = await res.json();
 
       if (json.status === 'success' && json.data) {
-        // Resolve assistant role
-        const matchedLocal = DATA_ASISTEN.find(a => a.nim.toString().trim() === cleanNim);
-        const resolvedRole = json.data.role || matchedLocal?.role || (cleanNim === '2311522037' ? 'Admin' : 'Asisten');
-
         const accountData = {
           userId: json.data.userId || cleanNim,
-          userName: json.data.userName,
+          userName: json.data.userName || json.data.nama || cleanNim,
           nim: json.data.userId || cleanNim,
-          nama: json.data.userName,
-          role: resolvedRole
+          nama: json.data.userName || json.data.nama || cleanNim,
+          role: json.data.role || 'Asisten'
         };
 
         setUserAccount(accountData);
@@ -120,38 +119,11 @@ export function AttendanceProvider({ children }) {
         localStorage.setItem('ABSENSI_USER_NAME', accountData.userName);
 
         return { success: true, data: accountData };
-      } else if (json.status === 'error') {
+      } else {
         return { success: false, message: json.message || 'NIM atau Password salah.' };
       }
     } catch (err) {
-      // 2. Fallback offline: Cocokkan terhadap Master Data lokal jika koneksi ke GAS offline
-      const assistant = DATA_ASISTEN.find(
-        (a) => a.nim.toString().trim() === cleanNim
-      );
-
-      if (!assistant) {
-        return { success: false, message: 'NIM tidak ditemukan di tabel Master Data Asisten.' };
-      }
-
-      const masterPassword = (assistant.password || assistant.pin || '').toString().trim();
-      if (cleanPin !== masterPassword) {
-        return { success: false, message: 'Password yang dimasukkan tidak sesuai dengan data di Master Asisten.' };
-      }
-
-      const accountData = {
-        userId: assistant.nim,
-        userName: assistant.nama,
-        nim: assistant.nim,
-        nama: assistant.nama,
-        role: assistant.role || (assistant.nim === '2311522037' ? 'Admin' : 'Asisten')
-      };
-
-      setUserAccount(accountData);
-      localStorage.setItem('userAccount', JSON.stringify(accountData));
-      localStorage.setItem('ABSENSI_USER_ID', assistant.nim);
-      localStorage.setItem('ABSENSI_USER_NAME', assistant.nama);
-
-      return { success: true, data: accountData };
+      return { success: false, message: 'Gagal terhubung ke Google Apps Script: ' + err.message };
     }
   };
 
