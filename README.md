@@ -33,9 +33,9 @@ Aplikasi memiliki 4 rute tampilan utama sesuai dengan [frontend.md](frontend.md)
 
 URL Google Apps Script Web App sekarang disimpan secara aman di dalam berkas environment `.env` dan tidak di-hardcode:
 
-1. Buat berkas `.env` di direktori utama:
+1. Buat berkas `.env` di direktori utama (contoh pada `.env.example`):
 ```env
-VITE_GAS_API_URL=https://script.google.com/macros/s/AKfycbyRIu-ErPECyZjOpRh6ZwN-V8jDw9bVqr5RCMJ_RZZLZ8TLcYd3h61IP2I0Qh-1AZcB/exec
+VITE_GAS_API_URL=https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec
 ```
 
 2. Seluruh modul aplikasi (Kirim Presensi Masuk/Keluar, Pengambilan Riwayat, dan Panel Admin) membaca URL ini secara terpusat melalui `import.meta.env.VITE_GAS_API_URL`.

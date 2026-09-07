@@ -3,7 +3,7 @@ import { DATA_ASISTEN } from '../dataAsisten';
 
 const AttendanceContext = createContext(null);
 
-export const DEFAULT_GAS_ENDPOINT = import.meta.env.VITE_GAS_API_URL || 'https://script.google.com/macros/s/AKfycbyRIu-ErPECyZjOpRh6ZwN-V8jDw9bVqr5RCMJ_RZZLZ8TLcYd3h61IP2I0Qh-1AZcB/exec';
+export const DEFAULT_GAS_ENDPOINT = import.meta.env.VITE_GAS_API_URL || '';
 export const REQUIRED_PIKET_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Jam (7.200.000 ms)
 
 export function AttendanceProvider({ children }) {
