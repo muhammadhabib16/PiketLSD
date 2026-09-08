@@ -298,53 +298,13 @@ export function AttendanceProvider({ children }) {
     }
   };
 
-  // Default fallback schedule matrix matching Google Spreadsheet "Jadwal Piket"
+  // Default empty schedule structure (Senin s.d. Jumat) without hardcoded names
   const defaultJadwalData = [
-    {
-      hari: 'Senin',
-      asisten: [
-        { nama: 'Muhammad Afiq Jakhel', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Anggun Meika Candra', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Dhyva Aulia Hendri', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Siti Aliani Husnah.F', nim: '-', waktu: '08:00 - 16:00' }
-      ]
-    },
-    {
-      hari: 'Selasa',
-      asisten: [
-        { nama: 'Fathiya Alzhafira', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Farhan Fitrahadi', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Ervizon Fariz', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Martia Perdana Putri', nim: '-', waktu: '08:00 - 16:00' }
-      ]
-    },
-    {
-      hari: 'Rabu',
-      asisten: [
-        { nama: 'Muhammad Habib', nim: '2311522037', waktu: '08:00 - 16:00' },
-        { nama: 'Laila Qadriyah', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Revin Pahlevi', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Varissa Anzani Badri', nim: '-', waktu: '08:00 - 16:00' }
-      ]
-    },
-    {
-      hari: 'Kamis',
-      asisten: [
-        { nama: 'Hafiz Muhammad Faqih', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Mikail Samyth Habibillah', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Putri Diva Riyanti', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Ferdian Rahman', nim: '-', waktu: '08:00 - 16:00' }
-      ]
-    },
-    {
-      hari: 'Jumat',
-      asisten: [
-        { nama: 'Fachri Akbar', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Kezia Valerina Damanik', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Nayla Thahira Meldian', nim: '-', waktu: '08:00 - 16:00' },
-        { nama: 'Rahil Akram Hammad', nim: '-', waktu: '08:00 - 16:00' }
-      ]
-    }
+    { hari: 'Senin', asisten: [] },
+    { hari: 'Selasa', asisten: [] },
+    { hari: 'Rabu', asisten: [] },
+    { hari: 'Kamis', asisten: [] },
+    { hari: 'Jumat', asisten: [] }
   ];
 
   // Helper to normalize dataJadwal from various GAS formats into standard array

@@ -91,7 +91,7 @@ export default function Dashboard() {
                 </span>
               </div>
               <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-white tracking-tight truncate mt-0.5">
-                Halo, {userAccount?.userName || 'Asisten'} 👋
+                Halo, {userAccount?.userName || 'Asisten'} 
               </h2>
             </div>
           </div>
