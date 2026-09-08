@@ -55,6 +55,20 @@ Kedua rute ini menggunakan API *fetching* yang sama, yakni menarik data melalui 
     *   *Data:* Karena NIM yang dikirim adalah milik Admin, *backend* akan secara otomatis menyuplai seluruh data asisten lab LSD.
     *   **Fitur Aksi:** Pada Tabel Pengajuan Izin, terdapat tombol **[Setujui]** (Hijau) dan **[Tolak]** (Merah) di setiap baris berstatus "Menunggu Persetujuan".
 
+    ### E. Tampilan Riwayat & Dasbor Admin (`/riwayat` & `/admin`)
+Kedua rute ini menggunakan API *fetching* yang sama, yakni menarik data melalui GET parameter `?nim=[NIM_DARI_LOCALSTORAGE]`.
+*   **Riwayat Pribadi (`/riwayat`):**
+    *   Menampilkan Tabel Riwayat Hadir dan Tabel Status Pengajuan Izin khusus milik asisten yang sedang *login*.
+*   **Dasbor Admin (`/admin`):** 
+    *   *Gatekeeper:* Di dalam komponen, validasi `if (userAccount.role !== "Admin")` paksa *redirect* pengguna kembali ke `/`.
+    *   *Data:* Karena NIM yang dikirim adalah milik Admin, *backend* akan secara otomatis menyuplai seluruh data asisten lab LSD.
+    *   **Fitur Aksi:** Pada Tabel Pengajuan Izin, terdapat tombol **[Setujui]** (Hijau) dan **[Tolak]** (Merah) di setiap baris berstatus "Menunggu Persetujuan".
+
+### F. Tampilan Jadwal Piket (`/jadwal`)
+*   **Fungsi:** Halaman referensi bagi asisten untuk melihat matriks jadwal tugas selama satu minggu penuh.
+*   **Elemen UI:** Tabel informatif yang memetakan nama-nama asisten berdasarkan kolom hari kerja (Senin s.d. Jumat).
+*   **Sumber Data:** Diambil dari *property* `dataJadwal` pada respons JSON fungsi `GET`. Karena data ini bersifat publik (untuk internal lab), data jadwal akan selalu dirender secara penuh (tidak difilter) terlepas dari apakah yang *login* adalah Asisten biasa maupun Admin.
+
 ---
 
 ## 3. Langkah Implementasi Frontend (Arahan Pengembangan)

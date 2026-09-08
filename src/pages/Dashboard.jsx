@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Building2,
   CalendarDays,
+  CalendarRange,
   LogOut,
   Sparkles,
   ShieldCheck
@@ -129,8 +130,8 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* 2. Main Action Cards - Clean 2-column Grid on Mobile for Maximum Thumb Ergonomics */}
-      <div className={`grid grid-cols-2 ${userAccount?.role === 'Admin' ? 'lg:grid-cols-4' : 'sm:grid-cols-3'} gap-2.5 sm:gap-3.5`}>
+      {/* 2. Main Action Cards - Clean Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
         {/* Card 1: Presensi Masuk / Status Piket */}
         <button
           onClick={() => navigate('/absen')}
@@ -163,7 +164,31 @@ export default function Dashboard() {
           </div>
         </button>
 
-        {/* Card 2: Pengajuan Izin */}
+        {/* Card 2: Jadwal Piket */}
+        <button
+          onClick={() => navigate('/jadwal')}
+          className="group rounded-2xl p-3.5 sm:p-5 bg-white border border-blue-100 hover:border-blue-400 hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[120px] sm:min-h-[140px] active:scale-[0.98]"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center transition-transform group-hover:scale-105">
+              <CalendarRange className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <span className="p-1 sm:p-1.5 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition">
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </span>
+          </div>
+
+          <div className="mt-2.5 sm:mt-3">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-600 transition truncate">
+              Jadwal Piket
+            </h3>
+            <p className="text-[10.5px] sm:text-xs text-slate-500 mt-0.5 line-clamp-2">
+              Matriks piket Senin - Jumat
+            </p>
+          </div>
+        </button>
+
+        {/* Card 3: Pengajuan Izin */}
         <button
           onClick={() => navigate('/izin')}
           className="group rounded-2xl p-3.5 sm:p-5 bg-white border border-blue-100 hover:border-blue-400 hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[120px] sm:min-h-[140px] active:scale-[0.98]"
@@ -187,7 +212,7 @@ export default function Dashboard() {
           </div>
         </button>
 
-        {/* Card 3: Riwayat Saya */}
+        {/* Card 4: Riwayat Saya */}
         <button
           onClick={() => navigate('/riwayat')}
           className="group rounded-2xl p-3.5 sm:p-5 bg-white border border-blue-100 hover:border-blue-400 hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[120px] sm:min-h-[140px] active:scale-[0.98]"
@@ -211,11 +236,11 @@ export default function Dashboard() {
           </div>
         </button>
 
-        {/* Card 4 [RBAC]: Panel Admin */}
+        {/* Card 5 [RBAC]: Panel Admin */}
         {userAccount?.role === 'Admin' && (
           <button
             onClick={() => navigate('/admin')}
-            className="group rounded-2xl p-3.5 sm:p-5 bg-blue-700 hover:bg-blue-800 text-white hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[120px] sm:min-h-[140px] border border-blue-600 active:scale-[0.98]"
+            className="group rounded-2xl p-3.5 sm:p-5 bg-blue-700 hover:bg-blue-800 text-white hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[120px] sm:min-h-[140px] border border-blue-600 active:scale-[0.98] col-span-2 sm:col-span-1"
           >
             <div className="flex items-start justify-between">
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/15 text-white flex items-center justify-center transition-transform group-hover:scale-105">

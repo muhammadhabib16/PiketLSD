@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import AbsenForm from './pages/AbsenForm';
 import Sukses from './pages/Sukses';
 import Riwayat from './pages/Riwayat';
+import Jadwal from './pages/Jadwal';
 import FormIzin from './pages/FormIzin';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -52,6 +53,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <AbsenForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/jadwal"
+                element={
+                  <ProtectedRoute>
+                    <Jadwal />
                   </ProtectedRoute>
                 }
               />

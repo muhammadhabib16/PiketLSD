@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { UserCog, LayoutDashboard, Camera, History, CalendarDays, LogOut } from 'lucide-react';
+import { UserCog, LayoutDashboard, Camera, History, CalendarDays, CalendarRange, LogOut } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
 
 export default function Header() {
@@ -33,6 +33,7 @@ export default function Header() {
     ? [
         { to: '/', label: 'Beranda', icon: LayoutDashboard },
         { to: '/absen', label: 'Presensi', icon: Camera },
+        { to: '/jadwal', label: 'Jadwal Piket', icon: CalendarRange },
         { to: '/izin', label: 'Tukar Piket', icon: CalendarDays },
         { to: '/riwayat', label: 'Riwayat Saya', icon: History },
         ...(userAccount?.role === 'Admin'

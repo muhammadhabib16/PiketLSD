@@ -55,6 +55,26 @@ export default function AbsenForm() {
   const isSessionActive = Boolean(piketSession);
   const { latitude, longitude, accuracy, locationString, loading: gpsLoading, error: gpsError, refreshLocation } = useGeolocation(!isSessionActive);
 
+  // Check 14:00 WIB Cutoff for Clock-in (frontend.md Section 2.C)
+  const checkIsPastCutoff = () => {
+    try {
+      const now = new Date();
+      const wibTimeString = now.toLocaleTimeString('en-US', {
+        timeZone: 'Asia/Jakarta',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const [h, m] = wibTimeString.split(':').map(Number);
+      return h > 14 || (h === 14 && m > 0);
+    } catch {
+      const now = new Date();
+      return now.getHours() > 14 || (now.getHours() === 14 && now.getMinutes() > 0);
+    }
+  };
+
+  const isPastCutoff = !isSessionActive && checkIsPastCutoff();
+
   // Countdown Engine Effect
   useEffect(() => {
     if (!piketSession || !piketSession.startTime) return;
@@ -232,6 +252,24 @@ export default function AbsenForm() {
           <div className="flex-1">
             <span className="font-bold block text-rose-950 mb-0.5">Pemberitahuan Sistem:</span>
             <span>{errorMessage}</span>
+          </div>
+        </div>
+      )}
+
+      {/* 14:00 WIB Cutoff Alert Banner (frontend.md Section 2.C) */}
+      {isPastCutoff && (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs sm:text-sm flex items-start gap-3 shadow-xs animate-fadeIn">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 font-bold text-amber-900">
+              <span>Pemberitahuan Batas Waktu Piket (&gt; 14:00 WIB)</span>
+              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-200 text-amber-900">
+                PENTING
+              </span>
+            </div>
+            <p className="text-[11.5px] sm:text-xs text-amber-800 leading-relaxed">
+              Waktu sekarang telah melewati pukul <strong>14:00 WIB</strong>. Laboratorium tutup pukul <strong>16:00 WIB</strong> dan sesi piket membutuhkan durasi wajib minimal <strong>2 jam</strong>.
+            </p>
           </div>
         </div>
       )}

@@ -70,8 +70,20 @@ export function AttendanceProvider({ children }) {
     }
   });
 
+  // Jadwal Piket Mingguan (Senin - Jumat)
+  const [jadwalList, setJadwalList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ABSENSI_LOCAL_JADWAL');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingJadwal, setLoadingJadwal] = useState(false);
   const [historyError, setHistoryError] = useState(null);
+  const [jadwalError, setJadwalError] = useState(null);
 
   // Login handler connected directly to backend GAS API (status: "Login")
   const login = async (nim, pin) => {
@@ -286,7 +298,139 @@ export function AttendanceProvider({ children }) {
     }
   };
 
-  // Fetch History from GAS doGet endpoint with NIM parameter support (Handles dataAbsensi & dataIzin)
+  // Default fallback schedule matrix matching Google Spreadsheet "Jadwal Piket"
+  const defaultJadwalData = [
+    {
+      hari: 'Senin',
+      asisten: [
+        { nama: 'Muhammad Afiq Jakhel', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Anggun Meika Candra', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Dhyva Aulia Hendri', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Siti Aliani Husnah.F', nim: '-', waktu: '08:00 - 16:00' }
+      ]
+    },
+    {
+      hari: 'Selasa',
+      asisten: [
+        { nama: 'Fathiya Alzhafira', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Farhan Fitrahadi', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Ervizon Fariz', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Martia Perdana Putri', nim: '-', waktu: '08:00 - 16:00' }
+      ]
+    },
+    {
+      hari: 'Rabu',
+      asisten: [
+        { nama: 'Muhammad Habib', nim: '2311522037', waktu: '08:00 - 16:00' },
+        { nama: 'Laila Qadriyah', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Revin Pahlevi', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Varissa Anzani Badri', nim: '-', waktu: '08:00 - 16:00' }
+      ]
+    },
+    {
+      hari: 'Kamis',
+      asisten: [
+        { nama: 'Hafiz Muhammad Faqih', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Mikail Samyth Habibillah', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Putri Diva Riyanti', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Ferdian Rahman', nim: '-', waktu: '08:00 - 16:00' }
+      ]
+    },
+    {
+      hari: 'Jumat',
+      asisten: [
+        { nama: 'Fachri Akbar', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Kezia Valerina Damanik', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Nayla Thahira Meldian', nim: '-', waktu: '08:00 - 16:00' },
+        { nama: 'Rahil Akram Hammad', nim: '-', waktu: '08:00 - 16:00' }
+      ]
+    }
+  ];
+
+  // Helper to normalize dataJadwal from various GAS formats into standard array
+  const normalizeJadwal = (raw) => {
+    if (!raw) return defaultJadwalData;
+    
+    // 1. If raw is already an array of { hari, asisten }
+    if (Array.isArray(raw) && raw.length > 0 && raw[0].hari) {
+      return raw;
+    }
+
+    // 2. Exact GAS V6 Script Format: Array of row objects { id, senin, selasa, rabu, kamis, jumat }
+    if (Array.isArray(raw) && raw.length > 0 && (raw[0].senin !== undefined || raw[0].selasa !== undefined || raw[0].rabu !== undefined)) {
+      const daysMap = {
+        'Senin': [],
+        'Selasa': [],
+        'Rabu': [],
+        'Kamis': [],
+        'Jumat': []
+      };
+
+      raw.forEach(row => {
+        ['senin', 'selasa', 'rabu', 'kamis', 'jumat'].forEach(dayKey => {
+          const val = (row[dayKey] || '').toString().trim();
+          if (val && val !== '-' && val !== '') {
+            const formattedDay = dayKey.charAt(0).toUpperCase() + dayKey.slice(1);
+            daysMap[formattedDay].push({
+              nama: val,
+              nim: '-',
+              waktu: '08:00 - 16:00'
+            });
+          }
+        });
+      });
+
+      return ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'].map(day => ({
+        hari: day,
+        asisten: daysMap[day]
+      }));
+    }
+
+    // 3. If raw is an object mapping days: { Senin: [...], Selasa: [...] }
+    if (typeof raw === 'object' && !Array.isArray(raw)) {
+      const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
+      return days.map(day => ({
+        hari: day,
+        asisten: Array.isArray(raw[day]) 
+          ? raw[day].map(item => typeof item === 'string' ? { nama: item, nim: '-', waktu: '08:00 - 16:00' } : item)
+          : []
+      }));
+    }
+
+    return defaultJadwalData;
+  };
+
+  // Fetch Jadwal Piket from GAS GET endpoint (requires ?nim= parameter per GAS V6 doGet)
+  const fetchJadwal = async (targetNim = null) => {
+    setLoadingJadwal(true);
+    setJadwalError(null);
+    try {
+      const effectiveNim = targetNim || userAccount?.userId || '';
+      const queryParam = effectiveNim ? `?nim=${encodeURIComponent(effectiveNim)}` : '';
+      if (!queryParam) {
+        if (!jadwalList) setJadwalList(defaultJadwalData);
+        return;
+      }
+      const res = await fetch(`${endpointUrl}${queryParam}`, { method: 'GET' });
+      const json = await res.json();
+      if (json.status === 'success' && json.dataJadwal) {
+        const normalized = normalizeJadwal(json.dataJadwal);
+        setJadwalList(normalized);
+        localStorage.setItem('ABSENSI_LOCAL_JADWAL', JSON.stringify(normalized));
+      } else if (!jadwalList) {
+        setJadwalList(defaultJadwalData);
+      }
+    } catch (err) {
+      setJadwalError('Gagal memuat data jadwal: ' + err.message);
+      if (!jadwalList) {
+        setJadwalList(defaultJadwalData);
+      }
+    } finally {
+      setLoadingJadwal(false);
+    }
+  };
+
+  // Fetch History from GAS doGet endpoint with NIM parameter support (Handles dataAbsensi, dataIzin, dataJadwal)
   const fetchHistory = async (targetNim = null) => {
     setLoadingHistory(true);
     setHistoryError(null);
@@ -303,10 +447,26 @@ export function AttendanceProvider({ children }) {
           : Array.isArray(json.data)
           ? json.data
           : [];
-        const izinList = Array.isArray(json.dataIzin) ? json.dataIzin : [];
+        
+        // Normalize dataIzin fields from GAS V5/V6 format
+        const rawIzin = Array.isArray(json.dataIzin) ? json.dataIzin : [];
+        const izinList = rawIzin.map(item => ({
+          ...item,
+          tanggalIzin: item.tglBerhalangan || item.tanggalIzin || '-',
+          tanggalPengganti: item.tglPengganti || item.tanggalPengganti || '-',
+          statusPersetujuan: item.statusApproval || item.statusPersetujuan || item.status || 'Menunggu Persetujuan',
+          status: item.statusApproval || item.statusPersetujuan || item.status || 'Menunggu Persetujuan',
+          timestamp: item.waktuPengajuan || item.timestamp || '-'
+        }));
 
         setHistory(absensiList);
         setIzinHistory(izinList);
+
+        if (json.dataJadwal) {
+          const normalized = normalizeJadwal(json.dataJadwal);
+          setJadwalList(normalized);
+          localStorage.setItem('ABSENSI_LOCAL_JADWAL', JSON.stringify(normalized));
+        }
 
         localStorage.setItem('ABSENSI_LOCAL_HISTORY', JSON.stringify(absensiList.slice(0, 50)));
         localStorage.setItem('ABSENSI_LOCAL_IZIN', JSON.stringify(izinList.slice(0, 50)));
@@ -371,9 +531,13 @@ export function AttendanceProvider({ children }) {
         submitIzin,
         history,
         izinHistory,
+        jadwalList: jadwalList || defaultJadwalData,
         loadingHistory,
+        loadingJadwal,
         historyError,
+        jadwalError,
         fetchHistory,
+        fetchJadwal,
         updateApprovalIzin
       }}
     >
