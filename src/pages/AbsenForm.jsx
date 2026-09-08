@@ -204,31 +204,31 @@ export default function AbsenForm() {
   const isTimeUnlocked = remainingTimeMs <= 0;
 
   return (
-    <div className="max-w-4xl mx-auto w-full space-y-4 pb-20 animate-fadeIn">
+    <div className="max-w-4xl mx-auto w-full space-y-3.5 sm:space-y-4 pb-4 animate-fadeIn">
       {/* 1. Header Navigation & Title */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">
+      <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-slate-200">
+        <div className="min-w-0">
+          <h2 className="text-base sm:text-xl font-bold text-slate-900 truncate">
             {isSessionActive ? 'Checkout Piket & Laporan' : 'Presensi Piket Masuk'}
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">
             {isSessionActive
-              ? 'Wajib durasi piket 2 jam dan melengkapi laporan inventaris lab'
-              : `Presensi piket atas nama ${userName} (${userId})`}
+              ? 'Wajib durasi 2 jam & laporan kondisi lab'
+              : `Presensi atas nama ${userName} (${userId})`}
           </p>
         </div>
 
         {isSessionActive && (
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" /> Sedang Piket
+          <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5 flex-shrink-0">
+            <Clock className="w-3.5 h-3.5 animate-pulse" /> Sedang Piket
           </span>
         )}
       </div>
 
       {/* 2. Error & Time Alerts */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs md:text-sm flex items-start gap-3 animate-shake shadow-sm">
-          <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+        <div className="p-3 sm:p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs sm:text-sm flex items-start gap-2.5 animate-shake shadow-xs">
+          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <span className="font-bold block text-rose-950 mb-0.5">Pemberitahuan Sistem:</span>
             <span>{errorMessage}</span>
@@ -238,29 +238,29 @@ export default function AbsenForm() {
 
       {/* Active Session Info & Countdown Card */}
       {isSessionActive && (
-        <div className="rounded-2xl p-4 md:p-5 bg-amber-50 border border-amber-300 shadow-sm space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              <div className="p-2.5 rounded-xl bg-amber-100 text-amber-800 flex-shrink-0">
-                <Clock className="w-5 h-5" />
+        <div className="rounded-2xl p-3.5 sm:p-5 bg-amber-50 border border-amber-300 shadow-xs space-y-2.5 sm:space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+            <div className="flex items-center space-x-2.5 sm:space-x-3">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-amber-100 text-amber-800 flex-shrink-0">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Sesi Piket Aktif</h3>
-                <p className="text-xs text-slate-600">
-                  Mulai Masuk: <span className="text-slate-900 font-mono font-semibold">{formatStartTime(piketSession.startTime)}</span> • Durasi: <span className="text-blue-700 font-bold">{elapsedString}</span>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900">Sesi Piket Aktif</h3>
+                <p className="text-[11px] sm:text-xs text-slate-600">
+                  Masuk: <span className="text-slate-900 font-mono font-semibold">{formatStartTime(piketSession.startTime)}</span> • Durasi: <span className="text-blue-700 font-bold">{elapsedString}</span>
                 </p>
               </div>
             </div>
 
             {/* Countdown Badge */}
             <div
-              className={`self-start sm:self-auto px-4 py-2 rounded-xl font-mono text-xs md:text-sm font-bold flex items-center gap-2 shadow-sm ${
+              className={`self-start sm:self-auto px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-mono text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-xs ${
                 isTimeUnlocked
                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                   : 'bg-amber-200/80 text-amber-950 border border-amber-300'
               }`}
             >
-              {isTimeUnlocked ? <Unlock className="w-4 h-4 text-emerald-700" /> : <Lock className="w-4 h-4 text-amber-800" />}
+              {isTimeUnlocked ? <Unlock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700" /> : <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-800" />}
               <span>{isTimeUnlocked ? '2 Jam Tercapai (Siap Kirim)' : countdownString}</span>
             </div>
           </div>
@@ -268,29 +268,29 @@ export default function AbsenForm() {
       )}
 
       {/* 3. Main Camera & Form Grid */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
           
           {/* LEFT: Camera Viewport */}
-          <div className="rounded-2xl p-4 bg-white border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between">
+          <div className="rounded-2xl p-3.5 sm:p-4 bg-white border border-slate-200 shadow-xs space-y-2.5 sm:space-y-3 flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between text-xs md:text-sm mb-2">
-                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+              <div className="flex items-center justify-between text-xs sm:text-sm mb-2">
+                <span className="font-bold text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
                   <Camera className="w-4 h-4 text-blue-600" />
                   {isSessionActive ? 'Foto Bukti Kondisi Lab' : 'Foto Selfie Kehadiran'}
                 </span>
-                <span className="text-xs text-rose-600 font-semibold">*Wajib Foto</span>
+                <span className="text-[11px] text-rose-600 font-semibold">*Wajib Foto</span>
               </div>
 
               {/* Camera Frame */}
-              <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-300 flex items-center justify-center">
+              <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-300 flex items-center justify-center shadow-inner">
                 {isFlashing && (
                   <div className="absolute inset-0 bg-white z-20 pointer-events-none opacity-90 transition-opacity duration-300" />
                 )}
 
                 {cameraError ? (
                   <div className="p-4 text-center space-y-2 text-white">
-                    <AlertCircle className="w-8 h-8 text-rose-400 mx-auto" />
+                    <AlertCircle className="w-7 h-7 text-rose-400 mx-auto" />
                     <p className="text-xs text-rose-200">{cameraError}</p>
                   </div>
                 ) : capturedImage ? (
@@ -315,7 +315,7 @@ export default function AbsenForm() {
 
                     {!cameraReady && (
                       <div className="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center text-white space-y-2">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                        <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
                         <span className="text-xs">Menyiapkan kamera...</span>
                       </div>
                     )}
@@ -323,12 +323,12 @@ export default function AbsenForm() {
                 )}
 
                 {/* Floating Camera Actions */}
-                <div className="absolute bottom-3 inset-x-0 flex items-center justify-center gap-3 z-10">
+                <div className="absolute bottom-3 inset-x-0 flex items-center justify-center gap-3.5 z-10">
                   {!capturedImage && cameraReady && (
                     <button
                       type="button"
                       onClick={toggleFacingMode}
-                      className="p-2.5 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white backdrop-blur border border-white/20 transition active:scale-95 shadow-md"
+                      className="p-3 rounded-full bg-slate-900/75 hover:bg-slate-900 active:scale-90 text-white backdrop-blur border border-white/20 transition shadow-md touch-manipulation"
                       title="Ganti Kamera Depan/Belakang"
                     >
                       <SwitchCamera className="w-4 h-4" />
@@ -339,10 +339,10 @@ export default function AbsenForm() {
                     <button
                       type="button"
                       onClick={handleCapture}
-                      className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center shadow-lg border-2 border-white transition"
+                      className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center shadow-lg border-2 border-white transition touch-manipulation ring-4 ring-blue-500/30"
                       title="Ambil Foto"
                     >
-                      <Camera className="w-5 h-5" />
+                      <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                   )}
 
@@ -350,7 +350,7 @@ export default function AbsenForm() {
                     <button
                       type="button"
                       onClick={handleRetake}
-                      className="px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-white border border-white/20 backdrop-blur flex items-center gap-1.5 text-xs font-bold active:scale-95 transition shadow-md"
+                      className="px-4 py-2 rounded-xl bg-slate-900/85 hover:bg-slate-900 text-white border border-white/20 backdrop-blur flex items-center gap-1.5 text-xs font-bold active:scale-95 transition shadow-md touch-manipulation"
                     >
                       <RotateCcw className="w-3.5 h-3.5 text-rose-400" /> Foto Ulang
                     </button>
@@ -359,25 +359,25 @@ export default function AbsenForm() {
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-500 text-center">
+            <p className="text-[10.5px] sm:text-[11px] text-slate-500 text-center">
               {capturedImage
-                ? 'Foto berhasil diambil dan siap dikirim.'
-                : 'Arahkan wajah atau ruangan lab ke kamera lalu tekan tombol foto.'}
+                ? '✓ Foto tersimpan dan siap dikirim.'
+                : 'Arahkan wajah atau lab ke kamera lalu tekan tombol foto.'}
             </p>
           </div>
 
           {/* RIGHT: Input / Report & GPS */}
-          <div className="space-y-4 flex flex-col justify-between">
-            <div className="space-y-4">
+          <div className="space-y-3.5 sm:space-y-4 flex flex-col justify-between">
+            <div className="space-y-3.5 sm:space-y-4">
               {/* If Active: Laporan Inventaris Textarea */}
               {isSessionActive ? (
-                <div className="rounded-2xl p-4 bg-white border border-slate-200 shadow-sm space-y-2">
-                  <label htmlFor="inputCatatan" className="block text-xs md:text-sm font-bold text-slate-800 flex items-center justify-between pb-1.5 border-b border-slate-100">
+                <div className="rounded-2xl p-3.5 sm:p-4 bg-white border border-slate-200 shadow-xs space-y-2">
+                  <label htmlFor="inputCatatan" className="block text-xs sm:text-sm font-bold text-slate-800 flex items-center justify-between pb-1.5 border-b border-slate-100">
                     <span className="flex items-center gap-1.5">
                       <FileText className="w-4 h-4 text-blue-600" />
                       Laporan Kondisi & Inventaris Lab *
                     </span>
-                    <span className="text-[11px] px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-semibold border border-rose-200">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-semibold border border-rose-200">
                       Wajib Diisi
                     </span>
                   </label>
@@ -388,9 +388,9 @@ export default function AbsenForm() {
                     value={catatan}
                     onChange={(e) => setCatatan(e.target.value)}
                     placeholder="Contoh: 30 PC berfungsi normal, ruangan rapi dan bersih, AC dan lampu telah dimatikan."
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs md:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition resize-none"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition resize-none"
                   />
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[10.5px] text-slate-400">
                     Laporkan status perangkat, kebersihan, dan kondisi penutupan lab.
                   </p>
                 </div>
@@ -409,12 +409,12 @@ export default function AbsenForm() {
             </div>
 
             {/* Submit Action Button */}
-            <div>
+            <div className="pt-1">
               {!isSessionActive ? (
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs md:text-sm tracking-wide shadow-md flex items-center justify-center gap-2 transition disabled:opacity-50"
+                  className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2 transition disabled:opacity-50 touch-manipulation min-h-[48px]"
                 >
                   {submitting ? (
                     <>
@@ -433,7 +433,7 @@ export default function AbsenForm() {
                   <button
                     type="submit"
                     disabled={submitting || !isTimeUnlocked}
-                    className={`w-full py-3.5 px-6 rounded-xl font-bold text-xs md:text-sm tracking-wide shadow-md flex items-center justify-center gap-2 transition active:scale-[0.98] ${
+                    className={`w-full py-3.5 px-6 rounded-xl font-bold text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2 transition active:scale-[0.98] min-h-[48px] touch-manipulation ${
                       isTimeUnlocked
                         ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
                         : 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed'
@@ -457,7 +457,7 @@ export default function AbsenForm() {
                     )}
                   </button>
                   {!isTimeUnlocked && (
-                    <p className="text-[11px] text-center text-amber-800 font-medium">
+                    <p className="text-[10.5px] sm:text-[11px] text-center text-amber-800 font-medium">
                       * Tombol checkout aktif otomatis setelah hitung mundur 2 jam selesai.
                     </p>
                   )}

@@ -24,8 +24,8 @@ export default function App() {
           {/* Top Header */}
           <Header />
 
-          {/* Main App Viewport */}
-          <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col pt-3 md:pt-6">
+          {/* Main App Viewport with safe mobile bottom spacing */}
+          <main className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex-1 flex flex-col pt-2.5 sm:pt-4 md:pt-6 pb-24 md:pb-8">
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />

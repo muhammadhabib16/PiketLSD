@@ -88,22 +88,22 @@ export default function Riwayat() {
   };
 
   return (
-    <div className="w-full space-y-4 pb-20 animate-fadeIn">
+    <div className="w-full space-y-3.5 sm:space-y-4 pb-4 animate-fadeIn">
       {/* 1. Header & Refresh */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-slate-200">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">
+          <h2 className="text-base sm:text-xl font-bold text-slate-900">
             Riwayat Presensi & Izin Saya
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Log presensi piket dan status izin untuk akun <strong className="text-slate-800">{userAccount?.userName}</strong> ({userAccount?.userId})
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+            Log presensi dan izin: <strong className="text-slate-800">{userAccount?.userName}</strong> ({userAccount?.userId})
           </p>
         </div>
 
         <button
           onClick={handleRefresh}
           disabled={loadingHistory}
-          className="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-blue-600 hover:bg-blue-50 active:scale-95 transition shadow-sm disabled:opacity-50 flex items-center gap-1.5 text-xs font-semibold"
+          className="self-start sm:self-auto px-3.5 py-1.5 sm:py-2 rounded-xl bg-white border border-slate-200 text-blue-600 hover:bg-blue-50 active:scale-95 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5 text-xs font-semibold touch-manipulation"
           title="Segarkan Riwayat"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} />
@@ -112,21 +112,21 @@ export default function Riwayat() {
       </div>
 
       {/* 2. Main Tab Switcher */}
-      <div className="flex items-center gap-2 p-1.5 bg-blue-50/80 rounded-xl border border-blue-200/80">
+      <div className="flex items-center gap-1.5 p-1 bg-blue-50/80 rounded-xl border border-blue-200/80">
         <button
           onClick={() => {
             setActiveTab('absensi');
             setStatusFilter('Semua');
           }}
-          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition ${
+          className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 touch-manipulation ${
             activeTab === 'absensi'
-              ? 'bg-white text-blue-600 shadow-sm border border-blue-200'
+              ? 'bg-white text-blue-600 shadow-xs border border-blue-200'
               : 'text-blue-700 hover:text-blue-900 hover:bg-blue-100/50'
           }`}
         >
-          <History className="w-3.5 h-3.5" />
-          <span>Presensi Hadir</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800">
+          <History className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">Presensi Hadir</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[9px] sm:text-[10px] font-semibold bg-blue-100 text-blue-800">
             {filteredAbsensi.length}
           </span>
         </button>
@@ -136,23 +136,23 @@ export default function Riwayat() {
             setActiveTab('izin');
             setStatusFilter('Semua');
           }}
-          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition ${
+          className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 touch-manipulation ${
             activeTab === 'izin'
-              ? 'bg-white text-blue-600 shadow-sm border border-blue-200'
+              ? 'bg-white text-blue-600 shadow-xs border border-blue-200'
               : 'text-blue-700 hover:text-blue-900 hover:bg-blue-100/50'
           }`}
         >
-          <CalendarDays className="w-3.5 h-3.5" />
-          <span>Pengajuan Izin</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800">
+          <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">Pengajuan Izin</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[9px] sm:text-[10px] font-semibold bg-blue-100 text-blue-800">
             {filteredIzin.length}
           </span>
         </button>
       </div>
 
       {/* 3. Search & Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="relative flex-1">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
           <input
             type="text"
@@ -163,12 +163,12 @@ export default function Riwayat() {
                 ? 'Cari laporan atau lokasi...'
                 : 'Cari alasan izin atau tanggal...'
             }
-            className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 shadow-sm transition"
+            className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 shadow-xs transition"
           />
         </div>
 
-        {/* Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs">
+        {/* Filter Chips with Smooth Touch Scroll */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs no-scrollbar">
           {(activeTab === 'absensi'
             ? ['Semua', 'Masuk', 'Keluar', 'Hadir']
             : ['Semua', 'Menunggu Persetujuan', 'Disetujui', 'Ditolak']
@@ -176,9 +176,9 @@ export default function Riwayat() {
             <button
               key={item}
               onClick={() => setStatusFilter(item)}
-              className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition text-xs ${
+              className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition text-xs active:scale-95 touch-manipulation flex-shrink-0 ${
                 statusFilter === item
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
               }`}
             >
@@ -200,19 +200,19 @@ export default function Riwayat() {
 
       {/* 5. Content View */}
       {loadingHistory && (activeTab === 'absensi' ? history.length === 0 : (izinHistory || []).length === 0) ? (
-        <div className="py-12 text-center space-y-2.5 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="py-12 text-center space-y-2.5 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
           <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
           <p className="text-xs text-slate-500">Memuat data dari Google Spreadsheet...</p>
         </div>
       ) : activeTab === 'absensi' ? (
         filteredAbsensi.length === 0 ? (
-          <div className="py-12 text-center space-y-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <div className="py-12 text-center space-y-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
             <FileText className="w-10 h-10 text-slate-300 mx-auto" />
             <h4 className="text-xs font-bold text-slate-700">Tidak ada riwayat presensi</h4>
             <p className="text-[11px] text-slate-400">Belum ada catatan absensi atau filter tidak cocok.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5">
             {filteredAbsensi.map((record, index) => {
               const isMasuk = (record.status || '').toLowerCase().includes('masuk');
               const isKeluar = (record.status || '').toLowerCase().includes('keluar');
@@ -220,17 +220,17 @@ export default function Riwayat() {
               return (
                 <div
                   key={record.id || index}
-                  className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between"
+                  className="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs space-y-2.5 flex flex-col justify-between"
                 >
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-blue-600" />
-                        {record.timestamp || record.waktuMasuk || '-'}
+                      <span className="text-[10.5px] sm:text-[11px] font-mono text-slate-500 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                        <span className="truncate">{record.timestamp || record.waktuMasuk || '-'}</span>
                       </span>
 
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex-shrink-0 ${
                           isMasuk
                             ? 'bg-blue-50 text-blue-700 border-blue-200'
                             : isKeluar
@@ -243,16 +243,16 @@ export default function Riwayat() {
                     </div>
 
                     {record.catatan && record.catatan !== '-' && (
-                      <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 italic line-clamp-2">
+                      <p className="text-xs text-slate-700 bg-slate-50 p-2 sm:p-2.5 rounded-lg border border-slate-100 italic line-clamp-2">
                         "{record.catatan}"
                       </p>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="flex items-center gap-1 font-mono truncate max-w-[150px]">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] sm:text-[11px] text-slate-500">
+                    <span className="flex items-center gap-1 font-mono truncate max-w-[140px] sm:max-w-[170px]">
                       <MapPin className="w-3 h-3 text-blue-600 flex-shrink-0" />
-                      {record.location || '-'}
+                      <span className="truncate">{record.location || '-'}</span>
                     </span>
 
                     {record.photoUrl && record.photoUrl.startsWith('http') && (
@@ -260,7 +260,7 @@ export default function Riwayat() {
                         href={record.photoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1 font-semibold underline"
+                        className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 font-semibold underline flex-shrink-0"
                       >
                         Foto Drive <ExternalLink className="w-2.5 h-2.5" />
                       </a>
@@ -273,13 +273,13 @@ export default function Riwayat() {
         )
       ) : (
         filteredIzin.length === 0 ? (
-          <div className="py-12 text-center space-y-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <div className="py-12 text-center space-y-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
             <CalendarDays className="w-10 h-10 text-slate-300 mx-auto" />
             <h4 className="text-xs font-bold text-slate-700">Tidak ada pengajuan izin</h4>
             <p className="text-[11px] text-slate-400">Anda belum memiliki riwayat pengajuan izin.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5">
             {filteredIzin.map((item, index) => {
               const status = item.statusPersetujuan || item.status || 'Menunggu Persetujuan';
               const isPending = status === 'Menunggu Persetujuan';
@@ -288,16 +288,16 @@ export default function Riwayat() {
               return (
                 <div
                   key={item.id || index}
-                  className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between"
+                  className="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs space-y-2.5 flex flex-col justify-between"
                 >
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-mono text-slate-400">
+                      <span className="text-[10.5px] sm:text-[11px] font-mono text-slate-400">
                         {item.timestamp || 'Tercatat'}
                       </span>
 
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 ${
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 flex-shrink-0 ${
                           isPending
                             ? 'bg-amber-50 text-amber-800 border-amber-300'
                             : isApproved
@@ -315,13 +315,13 @@ export default function Riwayat() {
                     <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500">Berhalangan:</span>
-                        <span className="font-semibold text-rose-700">
+                        <span className="font-semibold text-rose-700 truncate ml-2">
                           {formatDateDisplay(item.tanggalIzin)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
                         <span className="text-slate-500">Pengganti:</span>
-                        <span className="font-semibold text-emerald-700">
+                        <span className="font-semibold text-emerald-700 truncate ml-2">
                           {formatDateDisplay(item.tanggalPengganti)}
                         </span>
                       </div>

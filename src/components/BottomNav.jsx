@@ -9,14 +9,14 @@ export default function BottomNav() {
   if (!isAuthenticated) return null;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 max-w-lg mx-auto px-4 pb-4 pt-1 pointer-events-none">
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl p-1.5 border border-slate-200/90 shadow-xl flex items-center justify-around pointer-events-auto">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-[calc(0.6rem+env(safe-area-inset-bottom,0px))] pt-1 pointer-events-none">
+      <div className="max-w-md mx-auto bg-white/95 backdrop-blur-lg rounded-2xl p-1.5 border border-slate-200/90 shadow-2xl shadow-blue-900/10 flex items-center justify-around pointer-events-auto">
         <NavLink
           to="/"
           className={({ isActive }) =>
-            `flex flex-col items-center py-1.5 px-3 rounded-xl text-[11px] font-semibold transition-colors ${
+            `flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[10.5px] font-semibold transition-all duration-200 active:scale-95 ${
               isActive
-                ? 'bg-blue-50 text-blue-700 font-bold'
+                ? 'bg-blue-50 text-blue-700 font-bold shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`
           }
@@ -28,10 +28,10 @@ export default function BottomNav() {
         <NavLink
           to="/absen"
           className={({ isActive }) =>
-            `flex flex-col items-center py-1.5 px-3.5 rounded-xl text-[11px] font-bold transition-all ${
+            `flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[10.5px] font-bold transition-all duration-200 active:scale-95 ${
               isActive
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 scale-[1.02]'
+                : 'bg-blue-600/90 text-white hover:bg-blue-600 shadow-xs'
             }`
           }
         >
@@ -42,9 +42,9 @@ export default function BottomNav() {
         <NavLink
           to="/izin"
           className={({ isActive }) =>
-            `flex flex-col items-center py-1.5 px-3 rounded-xl text-[11px] font-semibold transition-colors ${
+            `flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[10.5px] font-semibold transition-all duration-200 active:scale-95 ${
               isActive
-                ? 'bg-blue-50 text-blue-700 font-bold'
+                ? 'bg-blue-50 text-blue-700 font-bold shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`
           }
@@ -56,9 +56,9 @@ export default function BottomNav() {
         <NavLink
           to="/riwayat"
           className={({ isActive }) =>
-            `flex flex-col items-center py-1.5 px-3 rounded-xl text-[11px] font-semibold transition-colors ${
+            `flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[10.5px] font-semibold transition-all duration-200 active:scale-95 ${
               isActive
-                ? 'bg-blue-50 text-blue-700 font-bold'
+                ? 'bg-blue-50 text-blue-700 font-bold shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`
           }
@@ -71,9 +71,9 @@ export default function BottomNav() {
           <NavLink
             to="/admin"
             className={({ isActive }) =>
-              `flex flex-col items-center py-1.5 px-3 rounded-xl text-[11px] font-semibold transition-colors ${
+              `flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[10.5px] font-semibold transition-all duration-200 active:scale-95 ${
                 isActive
-                  ? 'bg-blue-50 text-blue-700 font-bold'
+                  ? 'bg-blue-50 text-blue-700 font-bold shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`
             }
