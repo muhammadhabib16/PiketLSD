@@ -71,7 +71,7 @@ export default function Jadwal() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-200">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-xs">
+            <div className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
               <CalendarDays className="w-5 h-5" />
             </div>
             <div>
@@ -96,7 +96,7 @@ export default function Jadwal() {
       </div>
 
       {/* 2. Operational Info Card */}
-      <div className="rounded-2xl p-3.5 sm:p-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <div className="rounded-2xl p-3.5 sm:p-4 bg-blue-600 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="space-y-0.5">
           <div className="flex items-center gap-1.5">
             <Building2 className="w-4 h-4 text-blue-200" />
@@ -108,7 +108,7 @@ export default function Jadwal() {
             Wajib piket minimal <strong className="text-white">2 Jam</strong> dengan batas check-in sebelum <strong className="text-white">14:00 WIB</strong>.
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-white/15 px-3 py-1.5 rounded-xl backdrop-blur-xs border border-white/20 text-xs">
+        <div className="flex items-center gap-2 self-start sm:self-auto bg-blue-700 px-3 py-1.5 rounded-xl border border-blue-500 text-xs">
           <Clock className="w-4 h-4 text-amber-300" />
           <span>Jam Lab: <strong>08:00 - 16:00 WIB</strong></span>
         </div>
@@ -189,7 +189,7 @@ export default function Jadwal() {
                 key={item.hari}
                 className={`rounded-2xl p-3.5 sm:p-4 bg-white border transition shadow-xs hover:shadow-md flex flex-col justify-between ${
                   isToday
-                    ? 'border-blue-400 ring-2 ring-blue-500/20 bg-gradient-to-b from-blue-50/50 via-white to-white'
+                    ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/30'
                     : 'border-slate-200 hover:border-slate-300'
                 }`}
               >
@@ -223,15 +223,15 @@ export default function Jadwal() {
                             key={idx}
                             className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition ${
                               isUser
-                                ? 'bg-blue-50/90 border-blue-300 text-blue-950 shadow-xs'
-                                : 'bg-slate-50/80 border-slate-200/80 text-slate-800 hover:bg-slate-100/80'
+                                ? 'bg-blue-50 border-blue-300 text-blue-950 shadow-xs'
+                                : 'bg-slate-50 border-slate-200/80 text-slate-800 hover:bg-slate-100/80'
                             }`}
                           >
                             <div className="flex items-center space-x-2.5 min-w-0">
                               <div
                                 className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-extrabold flex-shrink-0 shadow-xs ${
                                   isUser
-                                    ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white'
+                                    ? 'bg-blue-600 text-white'
                                     : 'bg-slate-200 text-slate-700'
                                 }`}
                               >

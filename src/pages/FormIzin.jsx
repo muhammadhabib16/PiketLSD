@@ -191,7 +191,7 @@ export default function FormIzin() {
           <div className="grid grid-cols-2 gap-2.5 pt-1">
             <button
               onClick={() => navigate('/')}
-              className="py-3 px-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold transition active:scale-95 shadow-md shadow-blue-500/20 touch-manipulation min-h-[46px]"
+              className="py-3 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold transition active:scale-95 shadow-md shadow-blue-500/20 touch-manipulation min-h-[46px]"
             >
               Beranda
             </button>
@@ -291,7 +291,7 @@ export default function FormIzin() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 transition shadow-md shadow-blue-500/25 disabled:opacity-60 touch-manipulation min-h-[48px]"
+            className="w-full py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 transition shadow-md shadow-blue-500/20 disabled:opacity-60 touch-manipulation min-h-[48px]"
           >
             {submitting ? (
               <>

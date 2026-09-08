@@ -49,10 +49,6 @@ export default function Login() {
 
   return (
     <div className="relative min-h-[80vh] sm:min-h-[85vh] flex flex-col justify-center items-center py-4 sm:py-8 px-3.5 sm:px-4 overflow-hidden">
-      {/* Ambient Floating Light Blobs */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[420px] h-[320px] sm:h-[420px] rounded-full bg-gradient-to-tr from-blue-300/25 via-sky-200/20 to-transparent filter blur-3xl animate-blob-1 pointer-events-none z-0" />
-      <div className="absolute bottom-10 left-1/3 w-[260px] sm:w-[340px] h-[260px] sm:h-[340px] rounded-full bg-gradient-to-br from-indigo-200/25 via-blue-100/15 to-transparent filter blur-2xl animate-blob-2 pointer-events-none z-0" />
-      
       {/* Interactive Physics Dot Canvas */}
       <InteractiveDotBackground />
 

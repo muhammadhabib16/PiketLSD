@@ -116,7 +116,7 @@ export default function Header() {
         {isAuthenticated && (
           <div className="flex items-center gap-1.5 md:hidden flex-shrink-0">
             <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-xl border border-slate-200">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+              <div className="w-6 h-6 rounded-lg bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
                 {getUserInitials(userAccount?.userName)}
               </div>
               <div className="text-left hidden xs:block max-w-[75px] truncate">

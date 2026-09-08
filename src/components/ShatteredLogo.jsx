@@ -60,7 +60,7 @@ export default function ShatteredLogo({ size = 84, className = '' }) {
     >
       {/* Dynamic Ambient Glow Behind Logo */}
       <div
-        className={`absolute inset-0 rounded-3xl bg-gradient-to-tr from-blue-500/20 via-sky-400/25 to-blue-600/15 blur-xl transition-all duration-700 pointer-events-none ${
+        className={`absolute inset-0 rounded-3xl bg-blue-500/15 blur-xl transition-all duration-700 pointer-events-none ${
           isInteracting ? 'opacity-100 scale-125' : 'opacity-40 scale-95'
         }`}
       />

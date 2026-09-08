@@ -289,7 +289,7 @@ export default function AbsenForm() {
 
       {/* Active Session Info & Countdown Card */}
       {isSessionActive && (
-        <div className="rounded-2xl p-3.5 sm:p-5 bg-gradient-to-br from-amber-50 to-amber-100/60 border border-amber-300 shadow-xs space-y-2.5">
+        <div className="rounded-2xl p-3.5 sm:p-5 bg-amber-50 border border-amber-300 shadow-xs space-y-2.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="flex items-center space-x-2.5">
               <div className="p-2.5 rounded-xl bg-amber-200/80 text-amber-900 flex-shrink-0 shadow-xs">
@@ -398,7 +398,7 @@ export default function AbsenForm() {
                     <button
                       type="button"
                       onClick={handleCapture}
-                      className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-90 text-white flex items-center justify-center shadow-lg border-2 border-white transition touch-manipulation ring-4 ring-blue-500/30"
+                      className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center shadow-lg border-2 border-white transition touch-manipulation ring-4 ring-blue-500/30"
                       title="Ambil Foto"
                     >
                       <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -490,7 +490,7 @@ export default function AbsenForm() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm tracking-wide shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition disabled:opacity-50 touch-manipulation min-h-[48px]"
+                  className="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition disabled:opacity-50 touch-manipulation min-h-[48px]"
                 >
                   {submitting ? (
                     <>
@@ -511,7 +511,7 @@ export default function AbsenForm() {
                     disabled={submitting || !isTimeUnlocked}
                     className={`w-full py-3.5 px-6 rounded-2xl font-bold text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2 transition active:scale-[0.98] min-h-[48px] touch-manipulation ${
                       isTimeUnlocked
-                        ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white shadow-rose-600/25'
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
                         : 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed'
                     }`}
                   >

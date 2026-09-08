@@ -73,15 +73,11 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto w-full space-y-3.5 sm:space-y-4 pb-4 animate-fadeIn">
-      {/* 1. Hero & Profile Card with Mesh Gradient */}
-      <div className="relative overflow-hidden rounded-3xl p-4 sm:p-5 md:p-6 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-800 text-white shadow-lg shadow-blue-500/15 space-y-3.5 sm:space-y-4">
-        {/* Subtle decorative glow orb */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl pointer-events-none" />
-
+      {/* 1. Hero & Profile Card with Solid Blue */}
+      <div className="relative overflow-hidden rounded-3xl p-4 sm:p-5 md:p-6 bg-blue-600 text-white shadow-md shadow-blue-500/10 space-y-3.5 sm:space-y-4">
         <div className="relative flex items-center justify-between gap-2.5">
           <div className="flex items-center space-x-2.5 sm:space-x-3.5 min-w-0">
-            <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white/95 p-1.5 border border-white/40 flex items-center justify-center shadow-md flex-shrink-0">
+            <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white p-1.5 border border-blue-200 flex items-center justify-center shadow-xs flex-shrink-0">
               <img
                 src="/logo-lsd.png"
                 alt="Logo LSD"
@@ -90,7 +86,7 @@ export default function Dashboard() {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 text-blue-100 backdrop-blur-xs border border-white/20">
+                <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-700 text-blue-100 border border-blue-500">
                   Lab Systems Development
                 </span>
               </div>
@@ -102,10 +98,10 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <span
-              className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold flex items-center gap-1 sm:gap-1.5 shadow-sm backdrop-blur-md ${
+              className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold flex items-center gap-1 sm:gap-1.5 shadow-sm ${
                 isSessionActive
-                  ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300/80 animate-pulse'
-                  : 'bg-white/20 text-white border border-white/30'
+                  ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 animate-pulse'
+                  : 'bg-blue-700 text-white border border-blue-500'
               }`}
             >
               {isSessionActive ? (
@@ -125,7 +121,7 @@ export default function Dashboard() {
 
         {/* Dynamic Piket Session Timer or Operational Notice */}
         {isSessionActive ? (
-          <div className="relative bg-white/15 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 border border-white/25 space-y-2">
+          <div className="relative bg-blue-700/80 rounded-2xl p-3 sm:p-3.5 border border-blue-500/80 space-y-2">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
               <div className="flex items-center justify-between sm:block">
                 <span className="text-blue-200 text-[11px]">Mulai Masuk:</span>
@@ -133,7 +129,7 @@ export default function Dashboard() {
                   {formatStartTime(piketSession.startTime)}
                 </p>
               </div>
-              <div className="flex items-center justify-between sm:text-right pt-1 sm:pt-0 border-t border-white/10 sm:border-t-0">
+              <div className="flex items-center justify-between sm:text-right pt-1 sm:pt-0 border-t border-blue-600 sm:border-t-0">
                 <span className="text-blue-200 text-[11px]">Hitung Mundur Wajib (2 Jam):</span>
                 <p className="font-mono font-bold text-amber-300 text-xs sm:text-sm">
                   {countdownText}
@@ -142,17 +138,17 @@ export default function Dashboard() {
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-black/25 rounded-full h-2 overflow-hidden border border-white/15">
+            <div className="w-full bg-blue-900/40 rounded-full h-2 overflow-hidden border border-blue-500/50">
               <div
-                className="bg-gradient-to-r from-amber-300 to-emerald-300 h-full transition-all duration-500 rounded-full"
+                className="bg-amber-400 h-full transition-all duration-500 rounded-full"
                 style={{ width: `${percentComplete}%` }}
               />
             </div>
           </div>
         ) : (
-          <div className="relative pt-2.5 border-t border-white/20 flex items-center justify-between text-[11px] sm:text-xs text-blue-100">
+          <div className="relative pt-2.5 border-t border-blue-500/60 flex items-center justify-between text-[11px] sm:text-xs text-blue-100">
             <span>NIM: <strong className="font-mono text-white tracking-wide">{userAccount?.userId || '-'}</strong></span>
-            <span className="bg-white/15 px-2.5 py-0.5 rounded-lg border border-white/20 text-white font-medium">
+            <span className="bg-blue-700 px-2.5 py-0.5 rounded-lg border border-blue-500 text-white font-medium">
               Batas Absen: 14:00 WIB
             </span>
           </div>
@@ -167,15 +163,15 @@ export default function Dashboard() {
           onClick={() => navigate('/absen')}
           className={`group rounded-2xl p-3.5 sm:p-5 text-left transition shadow-xs hover:shadow-md flex flex-col justify-between min-h-[125px] sm:min-h-[140px] border active:scale-[0.97] touch-manipulation ${
             isSessionActive
-              ? 'bg-gradient-to-b from-amber-50/90 to-white border-amber-300 ring-2 ring-amber-400/30'
+              ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/30'
               : 'bg-white border-slate-200 hover:border-blue-400 ring-1 ring-slate-200/50'
           }`}
         >
           <div className="flex items-start justify-between">
             <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs ${
               isSessionActive
-                ? 'bg-gradient-to-tr from-amber-500 to-amber-600 text-white'
-                : 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white'
+                ? 'bg-amber-500 text-white'
+                : 'bg-blue-600 text-white'
             }`}>
               <Camera className="w-5 h-5" />
             </div>
@@ -202,7 +198,7 @@ export default function Dashboard() {
           className="group rounded-2xl p-3.5 sm:p-5 bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[125px] sm:min-h-[140px] active:scale-[0.97] touch-manipulation ring-1 ring-slate-200/50"
         >
           <div className="flex items-start justify-between">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-blue-50 to-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs">
               <CalendarRange className="w-5 h-5" />
             </div>
             <span className="p-1 sm:p-1.5 rounded-xl bg-slate-100 group-hover:bg-blue-100 text-slate-600 group-hover:text-blue-600 transition">
@@ -226,7 +222,7 @@ export default function Dashboard() {
           className="group rounded-2xl p-3.5 sm:p-5 bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[125px] sm:min-h-[140px] active:scale-[0.97] touch-manipulation ring-1 ring-slate-200/50"
         >
           <div className="flex items-start justify-between">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-amber-50 to-amber-100 text-amber-700 border border-amber-200 flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs">
               <CalendarDays className="w-5 h-5" />
             </div>
             <span className="p-1 sm:p-1.5 rounded-xl bg-slate-100 group-hover:bg-blue-100 text-slate-600 group-hover:text-blue-600 transition">
@@ -250,7 +246,7 @@ export default function Dashboard() {
           className="group rounded-2xl p-3.5 sm:p-5 bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[125px] sm:min-h-[140px] active:scale-[0.97] touch-manipulation ring-1 ring-slate-200/50"
         >
           <div className="flex items-start justify-between">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-50 to-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs">
               <History className="w-5 h-5" />
             </div>
             <span className="p-1 sm:p-1.5 rounded-xl bg-slate-100 group-hover:bg-blue-100 text-slate-600 group-hover:text-blue-600 transition">
@@ -272,7 +268,7 @@ export default function Dashboard() {
         {userAccount?.role === 'Admin' && (
           <button
             onClick={() => navigate('/admin')}
-            className="group rounded-2xl p-3.5 sm:p-5 bg-gradient-to-br from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[125px] sm:min-h-[140px] border border-blue-600 active:scale-[0.97] col-span-2 sm:col-span-1 touch-manipulation"
+            className="group rounded-2xl p-3.5 sm:p-5 bg-blue-700 hover:bg-blue-800 text-white hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[125px] sm:min-h-[140px] border border-blue-600 active:scale-[0.97] col-span-2 sm:col-span-1 touch-manipulation"
           >
             <div className="flex items-start justify-between">
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/15 text-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs">

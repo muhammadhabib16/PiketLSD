@@ -54,12 +54,12 @@ export default function BottomNav() {
           {({ isActive }) => (
             <div className="flex flex-col items-center">
               <div
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200 active:scale-90 ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md transition-all duration-200 active:scale-90 ${
                   isPiketActive
-                    ? 'bg-gradient-to-tr from-amber-500 to-amber-600 text-white shadow-amber-500/30 ring-4 ring-white'
+                    ? 'bg-amber-500 text-white shadow-amber-500/25 ring-4 ring-white'
                     : isActive
-                    ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-blue-500/35 ring-4 ring-white scale-105'
-                    : 'bg-gradient-to-tr from-blue-600 to-blue-700 text-white shadow-blue-600/30 ring-4 ring-white'
+                    ? 'bg-blue-600 text-white shadow-blue-600/30 ring-4 ring-white scale-105'
+                    : 'bg-blue-600 text-white shadow-blue-600/25 ring-4 ring-white'
                 }`}
               >
                 <Camera className="w-5 h-5" />
