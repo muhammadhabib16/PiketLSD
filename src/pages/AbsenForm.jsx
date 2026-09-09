@@ -132,7 +132,8 @@ export default function AbsenForm() {
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 300);
 
-    const imageSrc = webcamRef.current.getScreenshot({ width: 1080, height: 810 });
+    // Capture using the camera's natural aspect ratio to prevent stretching/distortion (gepeng) on mobile
+    const imageSrc = webcamRef.current.getScreenshot();
     if (imageSrc) {
       setCapturedImage(imageSrc);
       setErrorMessage('');
@@ -341,8 +342,8 @@ export default function AbsenForm() {
                 <span className="text-[11px] text-rose-600 font-semibold">*Wajib Foto</span>
               </div>
 
-              {/* Camera Frame */}
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-900 border border-slate-300 flex items-center justify-center shadow-inner">
+              {/* Camera Frame (Taller and spacious viewport) */}
+              <div className="relative w-full aspect-[4/3] sm:aspect-[4/3] min-h-[350px] sm:min-h-[400px] md:min-h-[440px] rounded-2xl overflow-hidden bg-slate-900 border border-slate-300 flex items-center justify-center shadow-inner">
                 {isFlashing && (
                   <div className="absolute inset-0 bg-white z-20 pointer-events-none opacity-90 transition-opacity duration-300" />
                 )}
@@ -364,6 +365,7 @@ export default function AbsenForm() {
                       ref={webcamRef}
                       audio={false}
                       screenshotFormat="image/jpeg"
+                      mirrored={facingMode === 'user'}
                       videoConstraints={videoConstraints}
                       onUserMedia={() => setCameraReady(true)}
                       onUserMediaError={() => {
