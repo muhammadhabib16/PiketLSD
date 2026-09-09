@@ -44,7 +44,7 @@
 html, body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
 }
 
 /* Prevent auto zoom on iOS Safari while keeping sharp layout */
