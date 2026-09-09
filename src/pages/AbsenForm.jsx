@@ -384,15 +384,15 @@ export default function AbsenForm() {
                 )}
 
                 {/* Floating Camera Actions */}
-                <div className="absolute bottom-3 inset-x-0 flex items-center justify-center gap-3.5 z-10">
+                <div className="absolute bottom-4 sm:bottom-5 inset-x-0 flex items-center justify-center gap-4 sm:gap-6 z-10">
                   {!capturedImage && cameraReady && (
                     <button
                       type="button"
                       onClick={toggleFacingMode}
-                      className="p-3 rounded-full bg-slate-900/80 hover:bg-slate-900 active:scale-90 text-white backdrop-blur border border-white/20 transition shadow-md touch-manipulation"
+                      className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-slate-900 active:scale-90 text-white backdrop-blur-md border border-white/30 flex items-center justify-center transition shadow-lg touch-manipulation cursor-pointer"
                       title="Ganti Kamera Depan/Belakang"
                     >
-                      <SwitchCamera className="w-4 h-4" />
+                      <SwitchCamera className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                   )}
 
@@ -400,10 +400,10 @@ export default function AbsenForm() {
                     <button
                       type="button"
                       onClick={handleCapture}
-                      className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center shadow-lg border-2 border-white transition touch-manipulation ring-4 ring-blue-500/30"
+                      className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center shadow-xl border-4 border-white transition touch-manipulation ring-4 ring-blue-500/40 cursor-pointer"
                       title="Ambil Foto"
                     >
-                      <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
+                      <Camera className="w-7 h-7 sm:w-8 sm:h-8" />
                     </button>
                   )}
 
@@ -411,9 +411,9 @@ export default function AbsenForm() {
                     <button
                       type="button"
                       onClick={handleRetake}
-                      className="px-4 py-2 rounded-xl bg-slate-900/85 hover:bg-slate-900 text-white border border-white/20 backdrop-blur flex items-center gap-1.5 text-xs font-bold active:scale-95 transition shadow-md touch-manipulation"
+                      className="px-5 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-900 text-white border border-white/25 backdrop-blur-md flex items-center gap-2 text-xs sm:text-sm font-bold active:scale-95 transition shadow-lg touch-manipulation cursor-pointer"
                     >
-                      <RotateCcw className="w-3.5 h-3.5 text-rose-400" /> Foto Ulang
+                      <RotateCcw className="w-4 h-4 text-rose-400" /> Foto Ulang
                     </button>
                   )}
                 </div>
