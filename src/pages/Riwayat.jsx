@@ -71,6 +71,39 @@ export default function Riwayat() {
     return matchesSearch && matchesStatus;
   });
 
+  const formatDateTimeDisplay = (rawTs) => {
+    if (!rawTs || rawTs === '-' || rawTs === '') return '-';
+    try {
+      const d = new Date(rawTs);
+      if (isNaN(d.getTime())) {
+        const parsed = new Date(rawTs.replace(' ', 'T'));
+        if (!isNaN(parsed.getTime())) {
+          return parsed.toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          }) + ', ' + parsed.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }) + ' WIB';
+        }
+        return rawTs;
+      }
+      return d.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }) + ', ' + d.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }) + ' WIB';
+    } catch {
+      return rawTs;
+    }
+  };
+
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return '-';
     try {
@@ -103,7 +136,7 @@ export default function Riwayat() {
         <button
           onClick={handleRefresh}
           disabled={loadingHistory}
-          className="self-start sm:self-auto px-3.5 py-1.5 sm:py-2 rounded-xl bg-white border border-slate-200 text-blue-600 hover:bg-blue-50 active:scale-95 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5 text-xs font-semibold touch-manipulation"
+          className="self-start sm:self-auto px-3.5 py-1.5 sm:py-2 rounded-xl bg-white border border-slate-200 text-blue-600 hover:bg-blue-50 active:scale-95 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5 text-xs font-semibold touch-manipulation cursor-pointer"
           title="Segarkan Riwayat"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} />
@@ -118,7 +151,7 @@ export default function Riwayat() {
             setActiveTab('absensi');
             setStatusFilter('Semua');
           }}
-          className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 touch-manipulation ${
+          className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 touch-manipulation cursor-pointer ${
             activeTab === 'absensi'
               ? 'bg-white text-blue-600 shadow-xs border border-blue-200'
               : 'text-blue-700 hover:text-blue-900 hover:bg-blue-100/50'
@@ -136,7 +169,7 @@ export default function Riwayat() {
             setActiveTab('izin');
             setStatusFilter('Semua');
           }}
-          className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 touch-manipulation ${
+          className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 touch-manipulation cursor-pointer ${
             activeTab === 'izin'
               ? 'bg-white text-blue-600 shadow-xs border border-blue-200'
               : 'text-blue-700 hover:text-blue-900 hover:bg-blue-100/50'
@@ -151,7 +184,7 @@ export default function Riwayat() {
       </div>
 
       {/* 3. Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="relative flex-1">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
           <input
@@ -160,7 +193,7 @@ export default function Riwayat() {
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={
               activeTab === 'absensi'
-                ? 'Cari laporan atau lokasi...'
+                ? 'Cari catatan laporan atau lokasi...'
                 : 'Cari alasan izin atau tanggal...'
             }
             className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 shadow-xs transition"
@@ -176,7 +209,7 @@ export default function Riwayat() {
             <button
               key={item}
               onClick={() => setStatusFilter(item)}
-              className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition text-xs active:scale-95 touch-manipulation flex-shrink-0 ${
+              className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition text-xs active:scale-95 touch-manipulation flex-shrink-0 cursor-pointer ${
                 statusFilter === item
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
@@ -192,7 +225,7 @@ export default function Riwayat() {
       {historyError && (
         <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-2">
           <span>{historyError}</span>
-          <button onClick={handleRefresh} className="underline font-bold text-amber-800">
+          <button onClick={handleRefresh} className="underline font-bold text-amber-800 cursor-pointer">
             Coba Lagi
           </button>
         </div>
@@ -212,29 +245,31 @@ export default function Riwayat() {
             <p className="text-[11px] text-slate-400">Belum ada catatan absensi atau filter tidak cocok.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredAbsensi.map((record, index) => {
               const isMasuk = (record.status || '').toLowerCase().includes('masuk');
-              const isKeluar = (record.status || '').toLowerCase().includes('keluar');
+              const isKeluar = (record.status || '').toLowerCase().includes('keluar') || (record.status || '').toLowerCase().includes('selesai');
+              const isFinished = Boolean(record.waktuKeluar && record.waktuKeluar !== '-' && record.waktuKeluar !== '');
 
               return (
                 <div
                   key={record.id || index}
-                  className="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs space-y-2.5 flex flex-col justify-between"
+                  className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between hover:border-slate-300 transition"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10.5px] sm:text-[11px] font-mono text-slate-500 flex items-center gap-1">
+                  <div className="space-y-2.5">
+                    {/* Header Row: Timestamp and Badge */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 min-w-0">
                         <Clock className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                        <span className="truncate">{record.timestamp || record.waktuMasuk || '-'}</span>
-                      </span>
+                        <span className="truncate">{formatDateTimeDisplay(record.timestamp || record.waktuMasuk)}</span>
+                      </div>
 
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex-shrink-0 ${
-                          isMasuk
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : isKeluar
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex-shrink-0 ${
+                          isKeluar
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : isMasuk || (record.status || '').toLowerCase().includes('hadir')
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
                             : 'bg-slate-100 text-slate-700 border-slate-200'
                         }`}
                       >
@@ -242,29 +277,72 @@ export default function Riwayat() {
                       </span>
                     </div>
 
+                    {/* Breakdown if both check-in and check-out exist */}
+                    {isFinished && (
+                      <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500">Waktu Masuk:</span>
+                          <span className="font-semibold text-slate-800">{formatDateTimeDisplay(record.waktuMasuk || record.timestamp)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/50">
+                          <span className="text-slate-500">Waktu Keluar:</span>
+                          <span className="font-semibold text-emerald-700">{formatDateTimeDisplay(record.waktuKeluar)}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Catatan / Laporan */}
                     {record.catatan && record.catatan !== '-' && (
-                      <p className="text-xs text-slate-700 bg-slate-50 p-2 sm:p-2.5 rounded-lg border border-slate-100 italic line-clamp-2">
+                      <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 italic line-clamp-2">
                         "{record.catatan}"
                       </p>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] sm:text-[11px] text-slate-500">
-                    <span className="flex items-center gap-1 font-mono truncate max-w-[140px] sm:max-w-[170px]">
-                      <MapPin className="w-3 h-3 text-blue-600 flex-shrink-0" />
-                      <span className="truncate">{record.location || '-'}</span>
-                    </span>
-
-                    {record.photoUrl && record.photoUrl.startsWith('http') && (
+                  {/* Footer Row: GPS & Photo Links */}
+                  <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                    {record.location && record.location !== '-' ? (
                       <a
-                        href={record.photoUrl}
+                        href={`https://www.google.com/maps?q=${encodeURIComponent(record.location)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 font-semibold underline flex-shrink-0"
+                        className="flex items-center gap-1 font-mono text-[10.5px] text-slate-600 hover:text-blue-600 transition truncate min-w-0"
+                        title="Buka titik koordinat di Google Maps"
                       >
-                        Foto Drive <ExternalLink className="w-2.5 h-2.5" />
+                        <MapPin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                        <span className="truncate">{record.location}</span>
                       </a>
+                    ) : (
+                      <span className="flex items-center gap-1 text-slate-400 text-[10.5px]">
+                        <MapPin className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                        <span>Lokasi -</span>
+                      </span>
                     )}
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {record.photoUrl && record.photoUrl.startsWith('http') && (
+                        <a
+                          href={record.photoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[10.5px] border border-blue-200 flex items-center gap-1 transition"
+                        >
+                          <span>Foto Masuk</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                      {record.photoUrlKeluar && record.photoUrlKeluar.startsWith('http') && (
+                        <a
+                          href={record.photoUrlKeluar}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[10.5px] border border-emerald-200 flex items-center gap-1 transition"
+                        >
+                          <span>Foto Keluar</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -291,9 +369,9 @@ export default function Riwayat() {
                   className="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs space-y-2.5 flex flex-col justify-between"
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10.5px] sm:text-[11px] font-mono text-slate-400">
-                        {item.timestamp || 'Tercatat'}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10.5px] sm:text-[11px] font-mono text-slate-500">
+                        {formatDateTimeDisplay(item.timestamp) || 'Tercatat'}
                       </span>
 
                       <span

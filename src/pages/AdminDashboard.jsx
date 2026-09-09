@@ -173,6 +173,39 @@ export default function AdminDashboard() {
   const approvedIzinCount = izinRecords.filter((i) => (i.statusPersetujuan || i.status || '').includes('Disetujui')).length;
   const rejectedIzinCount = izinRecords.filter((i) => (i.statusPersetujuan || i.status || '').includes('Ditolak')).length;
 
+  const formatDateTimeDisplay = (rawTs) => {
+    if (!rawTs || rawTs === '-' || rawTs === '') return '-';
+    try {
+      const d = new Date(rawTs);
+      if (isNaN(d.getTime())) {
+        const parsed = new Date(rawTs.replace(' ', 'T'));
+        if (!isNaN(parsed.getTime())) {
+          return parsed.toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          }) + ', ' + parsed.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }) + ' WIB';
+        }
+        return rawTs;
+      }
+      return d.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }) + ', ' + d.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }) + ' WIB';
+    } catch {
+      return rawTs;
+    }
+  };
+
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return '-';
     try {
@@ -451,12 +484,12 @@ export default function AdminDashboard() {
                     <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs space-y-1">
                       <div className="flex items-center justify-between text-[11px]">
                         <span className="text-slate-500">Masuk:</span>
-                        <span className="font-semibold text-slate-800">{item.waktuMasuk || '-'}</span>
+                        <span className="font-semibold text-slate-800">{formatDateTimeDisplay(item.waktuMasuk)}</span>
                       </div>
                       <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/50">
                         <span className="text-slate-500">Keluar:</span>
                         <span className={isFinished ? 'font-semibold text-slate-800' : 'text-amber-700 italic'}>
-                          {isFinished ? item.waktuKeluar : 'Belum Checkout'}
+                          {isFinished ? formatDateTimeDisplay(item.waktuKeluar) : 'Belum Checkout'}
                         </span>
                       </div>
                     </div>
@@ -552,12 +585,12 @@ export default function AdminDashboard() {
                           </td>
 
                           <td className="py-3 px-4 text-slate-700 whitespace-nowrap">
-                            {item.waktuMasuk || '-'}
+                            {formatDateTimeDisplay(item.waktuMasuk)}
                           </td>
 
                           <td className="py-3 px-4 whitespace-nowrap">
                             <span className={isFinished ? 'text-slate-800 font-medium' : 'text-amber-700 italic'}>
-                              {isFinished ? item.waktuKeluar : 'Belum Checkout'}
+                              {isFinished ? formatDateTimeDisplay(item.waktuKeluar) : 'Belum Checkout'}
                             </span>
                           </td>
 
