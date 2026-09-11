@@ -13,18 +13,18 @@ export default function InteractiveDotBackground() {
     let width = 0;
     let height = 0;
 
-    // Responsive configuration state
+    // Responsive configuration state with smaller, more transparent particles
     let config = {
-      spacing: 38,
-      baseRadius: 2.2,
-      interactionRadius: 140,
-      repelDistance: 32,
+      spacing: 44,
+      baseRadius: 1.3,
+      interactionRadius: 130,
+      repelDistance: 28,
     };
 
     const mouse = {
       x: -1000,
       y: -1000,
-      radius: 140,
+      radius: 130,
       isActive: false
     };
 
@@ -35,26 +35,26 @@ export default function InteractiveDotBackground() {
       if (w < 640) {
         // Mobile screen (< 640px)
         return {
-          spacing: 26,
-          baseRadius: 1.6,
-          interactionRadius: 90,
-          repelDistance: 20,
+          spacing: 32,
+          baseRadius: 0.9,
+          interactionRadius: 85,
+          repelDistance: 18,
         };
       } else if (w < 1024) {
         // Tablet screen (640px - 1024px)
         return {
-          spacing: 32,
-          baseRadius: 2.0,
-          interactionRadius: 120,
-          repelDistance: 26,
+          spacing: 38,
+          baseRadius: 1.1,
+          interactionRadius: 110,
+          repelDistance: 22,
         };
       } else {
         // Desktop screen (> 1024px)
         return {
-          spacing: 38,
-          baseRadius: 2.3,
-          interactionRadius: 150,
-          repelDistance: 34,
+          spacing: 44,
+          baseRadius: 1.3,
+          interactionRadius: 130,
+          repelDistance: 28,
         };
       }
     };
@@ -123,18 +123,18 @@ export default function InteractiveDotBackground() {
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
-      time += 0.03;
+      time += 0.025;
 
-      // Update and draw responsive dots (No connecting lines)
+      // Update and draw subtle responsive dots
       for (let i = 0; i < dots.length; i++) {
         const dot = dots[i];
 
-        // Subtle gentle breathing pulse
-        const wave = Math.sin(time + dot.phase) * 0.35;
+        // Soft, gentle breathing pulse
+        const wave = Math.sin(time + dot.phase) * 0.2;
         let targetX = dot.originX;
         let targetY = dot.originY;
         let radius = config.baseRadius + wave;
-        let fillStyle = 'rgba(59, 130, 246, 0.38)'; // Elegant clean blue
+        let fillStyle = 'rgba(59, 130, 246, 0.18)'; // Subtle, elegant translucent blue
 
         const dx = mouse.x - dot.x;
         const dy = mouse.y - dot.y;
@@ -148,15 +148,15 @@ export default function InteractiveDotBackground() {
           targetX = dot.originX - Math.cos(angle) * (force * config.repelDistance);
           targetY = dot.originY - Math.sin(angle) * (force * config.repelDistance);
           
-          // Glow and enlarge proportionally without any lines
-          radius = config.baseRadius + force * (config.baseRadius * 1.5);
-          fillStyle = `rgba(37, 99, 235, ${0.45 + force * 0.55})`;
+          // Delicate glow and enlargement
+          radius = config.baseRadius + force * (config.baseRadius * 1.2);
+          fillStyle = `rgba(37, 99, 235, ${0.22 + force * 0.38})`;
 
-          // Draw gentle halo ring on active dots
-          if (force > 0.4) {
+          // Draw soft subtle halo ring on closest dots
+          if (force > 0.45) {
             ctx.beginPath();
-            ctx.arc(dot.x, dot.y, radius + 3, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(59, 130, 246, ${force * 0.20})`;
+            ctx.arc(dot.x, dot.y, radius + 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(59, 130, 246, ${force * 0.10})`;
             ctx.fill();
           }
         }
@@ -167,7 +167,7 @@ export default function InteractiveDotBackground() {
 
         // Render dot
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, Math.max(0.8, radius), 0, Math.PI * 2);
+        ctx.arc(dot.x, dot.y, Math.max(0.6, radius), 0, Math.PI * 2);
         ctx.fillStyle = fillStyle;
         ctx.fill();
       }

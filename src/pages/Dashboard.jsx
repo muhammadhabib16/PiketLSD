@@ -14,7 +14,8 @@ import {
   Sparkles,
   ShieldCheck,
   User,
-  AlertCircle
+  AlertCircle,
+  BookOpen
 } from 'lucide-react';
 import { useAttendance, REQUIRED_PIKET_DURATION_MS } from '../context/AttendanceContext';
 
@@ -357,7 +358,46 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 4. Recent Log Summary */}
+      {/* 4. Ketentuan Singkat Piket Lab */}
+      <div className="rounded-2xl p-3.5 sm:p-4 bg-white border border-slate-200/90 shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+              <BookOpen className="w-4 h-4" />
+            </div>
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+              Ketentuan Singkat Piket
+            </h4>
+          </div>
+          <span className="text-[10px] font-semibold text-slate-400">
+            SOP Lab LSD
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
+          <div className="flex items-start gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+            <Clock className="w-3.5 h-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <span><strong>Batas Masuk 14:00 WIB:</strong> Presensi masuk maksimal jam 2 siang.</span>
+          </div>
+
+          <div className="flex items-start gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <span><strong>Durasi Wajib 2 Jam:</strong> Minimal bertugas 120 menit sebelum checkout.</span>
+          </div>
+
+          <div className="flex items-start gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+            <Camera className="w-3.5 h-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <span><strong>Selfie Live & GPS:</strong> Wajib kamera langsung di dalam lab dengan GPS aktif.</span>
+          </div>
+
+          <div className="flex items-start gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+            <CalendarDays className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <span><strong>Izin / Ganti Hari:</strong> Ajukan sebelum pukul 17:00 WIB agar tidak alpa.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Recent Log Summary */}
       {lastResult && (
         <div className="rounded-2xl p-3.5 sm:p-4 bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">

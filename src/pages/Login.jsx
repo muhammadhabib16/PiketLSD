@@ -7,7 +7,9 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  KeyRound
+  KeyRound,
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
 import ShatteredLogo from '../components/ShatteredLogo';
@@ -48,110 +50,126 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-[80vh] sm:min-h-[85vh] flex flex-col justify-center items-center py-4 sm:py-8 px-3.5 sm:px-4 overflow-hidden">
-      {/* Interactive Physics Dot Canvas */}
+    <div className="relative min-h-[82vh] sm:min-h-[88vh] flex flex-col justify-center items-center py-6 sm:py-10 px-4 sm:px-6 overflow-hidden">
+      {/* Subtle Interactive Particle Canvas */}
       <InteractiveDotBackground />
 
-      {/* Main Login Content Card */}
-      <div className="relative z-10 w-full max-w-md mx-auto animate-fadeIn">
+      {/* Decorative ambient background glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 sm:w-96 h-80 sm:h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 translate-y-1/3 w-64 sm:w-80 h-64 sm:h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      {/* Main Login Card Container */}
+      <div className="relative z-10 w-full max-w-[430px] mx-auto animate-fadeIn">
         {/* Brand Icon & Heading */}
-        <div className="text-center space-y-2.5 sm:space-y-3 mb-4 sm:mb-6">
-          {/* Shattered Shard Animated Logo */}
-          <div className="flex justify-center">
-            <ShatteredLogo size={76} />
+        <div className="text-center space-y-3 mb-6 sm:mb-8">
+          {/* Shattered Shard Animated Logo with subtle glow halo */}
+          <div className="flex justify-center relative">
+            <div className="absolute inset-0 bg-blue-500/15 rounded-full blur-xl transform scale-75 pointer-events-none" />
+            <ShatteredLogo size={78} />
           </div>
 
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-blue-50/90 text-blue-700 border border-blue-200/80 mb-2 shadow-xs backdrop-blur-xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" /> Portal Presensi Asisten
-            </div>
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
+          <div className="space-y-1.5">
+            
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               Laboratorium Systems Development
             </h2>
-            <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 mt-1 max-w-xs sm:max-w-sm mx-auto leading-relaxed">
-              Masukkan NIM dan Password terdaftar untuk presensi mandiri dan riwayat kehadiran
+            <p className="text-xs sm:text-sm text-slate-500 max-w-xs sm:max-w-sm mx-auto leading-relaxed">
+              Silakan masukkan NIM dan Password untuk mengakses sistem presensi mandiri
             </p>
           </div>
         </div>
 
-        {/* Main Login Card */}
-        <div className="w-full bg-white/95 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 border border-blue-100 shadow-xl shadow-blue-500/5 space-y-4 sm:space-y-5">
-        {errorMessage && (
-          <div className="p-3 sm:p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs sm:text-sm flex items-start gap-2.5 animate-shake shadow-xs">
-            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-bold">Gagal Masuk</p>
-              <p className="text-rose-700 mt-0.5">{errorMessage}</p>
+        {/* Main Glassmorphism Login Card */}
+        <div className="w-full bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-7 md:p-8 border border-white/80 shadow-2xl shadow-blue-900/5 space-y-5">
+          {errorMessage && (
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50/90 border border-rose-200/80 text-rose-900 text-xs sm:text-sm flex items-start gap-3 animate-shake shadow-xs">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-rose-950">Gagal Masuk</p>
+                <p className="text-rose-700 mt-0.5 leading-relaxed">{errorMessage}</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <form onSubmit={handleLogin} className="space-y-3.5 sm:space-y-4">
-          {/* Field 1: NIM */}
-          <div className="space-y-1.5">
-            <label htmlFor="nim" className="block text-xs sm:text-sm font-bold text-slate-800">
-              Nomor Induk Mahasiswa (NIM)
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-              <input
-                id="nim"
-                type="text"
-                autoFocus
-                required
-                value={nimInput}
-                onChange={(e) => setNimInput(e.target.value)}
-                placeholder="Contoh: 2311522037"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition font-mono"
-              />
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-4.5">
+            {/* Field 1: NIM */}
+            <div className="space-y-1.5">
+              <label htmlFor="nim" className="block text-xs font-bold text-slate-700">
+                Nomor Induk Mahasiswa (NIM)
+              </label>
+              <div className="relative group">
+                <div className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                  <User className="w-4 h-4" />
+                </div>
+                <input
+                  id="nim"
+                  type="text"
+                  autoFocus
+                  required
+                  value={nimInput}
+                  onChange={(e) => setNimInput(e.target.value)}
+                  placeholder="Masukkan NIM terdaftar..."
+                  className="w-full bg-slate-50/80 hover:bg-slate-50 focus:bg-white border border-slate-200/90 focus:border-blue-500 rounded-2xl pl-10 pr-4 py-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-mono shadow-2xs"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Field 2: Password */}
-          <div className="space-y-1.5">
-            <label htmlFor="pin" className="block text-xs sm:text-sm font-bold text-slate-800">
-              Password Asisten
-            </label>
-            <div className="relative">
-              <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-              <input
-                id="pin"
-                type={showPin ? 'text' : 'password'}
-                required
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value)}
-                placeholder="Masukkan password terdaftar..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition font-mono"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPin((prev) => !prev)}
-                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-1 rounded transition touch-manipulation"
-                title={showPin ? 'Sembunyikan Password' : 'Tampilkan Password'}
-              >
-                {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+            {/* Field 2: Password */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label htmlFor="pin" className="block text-xs font-bold text-slate-700">
+                  Password Asisten
+                </label>
+              </div>
+              <div className="relative group">
+                <div className="absolute left-3.5 top-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <input
+                  id="pin"
+                  type={showPin ? 'text' : 'password'}
+                  required
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  placeholder="Masukkan password Anda..."
+                  className="w-full bg-slate-50/80 hover:bg-slate-50 focus:bg-white border border-slate-200/90 focus:border-blue-500 rounded-2xl pl-10 pr-11 py-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-mono shadow-2xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin((prev) => !prev)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 p-1 rounded-xl transition-colors active:scale-95 touch-manipulation cursor-pointer"
+                  title={showPin ? 'Sembunyikan Password' : 'Tampilkan Password'}
+                >
+                  {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2 disabled:opacity-60 touch-manipulation min-h-[48px]"
-          >
-            {loading ? (
-              <span>Memverifikasi Akun...</span>
-            ) : (
-              <>
-                <span>Masuk ke Sistem Presensi</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-700 hover:via-blue-800 hover:to-indigo-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 touch-manipulation min-h-[50px] cursor-pointer"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Memverifikasi Akun...</span>
+                </div>
+              ) : (
+                <>
+                  <span>Masuk ke Sistem Presensi</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                </>
+              )}
+            </button>
+          </form>
+
+       
+          
+        </div>
       </div>
     </div>
-  </div>
   );
 }
+

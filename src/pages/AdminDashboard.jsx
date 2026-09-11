@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -20,9 +20,14 @@ import {
   Check,
   X,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  AlertTriangle,
+  CalendarCheck,
+  ChevronDown
 } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
+
+const CHUNK_SIZE = 12;
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -44,6 +49,11 @@ export default function AdminDashboard() {
   const [successMsg, setSuccessMsg] = useState('');
   const [actionLoadingRow, setActionLoadingRow] = useState(null);
 
+  // Lazy Load State
+  const [visibleCount, setVisibleCount] = useState(CHUNK_SIZE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const observerTargetRef = useRef(null);
+
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
@@ -51,6 +61,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchAdminData();
   }, [userAccount?.userId, endpointUrl]);
+
+  // Reset lazy load counter when tab, search or filter changes
+  useEffect(() => {
+    setVisibleCount(CHUNK_SIZE);
+  }, [activeTab, searchTerm, statusFilter]);
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -78,6 +93,80 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper to determine status category for an absensi record
+  const getAbsensiStatusInfo = (item) => {
+    const rawStatus = (item.status || '').trim();
+    const lowerStatus = rawStatus.toLowerCase();
+
+    // 1. Izin / Ganti Hari
+    if (lowerStatus.includes('izin') || lowerStatus.includes('ganti hari')) {
+      return {
+        type: 'Izin',
+        label: rawStatus || 'Izin (Ganti Hari)',
+        badgeClass: 'bg-purple-50 text-purple-700 border-purple-200',
+        dotClass: 'bg-purple-500'
+      };
+    }
+
+    // 2. Alpa (Tidak Hadir)
+    if (lowerStatus.includes('alpa')) {
+      return {
+        type: 'Alpa',
+        label: rawStatus || 'Alpa (Tidak Hadir)',
+        badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+        dotClass: 'bg-rose-500'
+      };
+    }
+
+    // 3. Selesai (Sudah Checkout)
+    const hasCheckout = Boolean(item.waktuKeluar && item.waktuKeluar !== '-' && item.waktuKeluar !== '');
+    if (hasCheckout) {
+      return {
+        type: 'Selesai',
+        label: 'Selesai Piket',
+        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        dotClass: 'bg-emerald-500'
+      };
+    }
+
+    // 4. Lupa Checkout vs Sedang Piket
+    const isExplicitLupa = lowerStatus.includes('lupa') || lowerStatus.includes('tidak checkout');
+    
+    let isPastSession = false;
+    if (item.waktuMasuk && item.waktuMasuk !== '-') {
+      try {
+        const d = new Date(item.waktuMasuk.replace(' ', 'T'));
+        if (!isNaN(d.getTime())) {
+          const now = new Date();
+          const isDiffDay = d.toDateString() !== now.toDateString();
+          const hoursDiff = (now.getTime() - d.getTime()) / (1000 * 60 * 60);
+          if (isDiffDay || hoursDiff > 12) {
+            isPastSession = true;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (isExplicitLupa || isPastSession) {
+      return {
+        type: 'Lupa Checkout',
+        label: 'Lupa Checkout',
+        badgeClass: 'bg-amber-50 text-amber-800 border-amber-300',
+        dotClass: 'bg-amber-500'
+      };
+    }
+
+    // 5. Sedang Piket (Aktif hari ini)
+    return {
+      type: 'Aktif',
+      label: 'Sedang Piket',
+      badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+      dotClass: 'bg-blue-500'
+    };
   };
 
   // Handle Multi-tier Approval (Setujui / Tolak) with Admin userId injected
@@ -130,19 +219,21 @@ export default function AdminDashboard() {
       (item.userId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.catatan || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-    const isAlpa = (item.status || '').toLowerCase().includes('alpa');
-    const isDone = item.waktuKeluar && item.waktuKeluar !== '-' && item.waktuKeluar !== '' && !isAlpa;
-    const isActive = !isDone && !isAlpa;
+    const statusInfo = getAbsensiStatusInfo(item);
 
     const matchesStatus =
       statusFilter === 'Semua'
         ? true
-        : statusFilter === 'Selesai'
-        ? isDone
         : statusFilter === 'Aktif'
-        ? isActive
+        ? statusInfo.type === 'Aktif'
+        : statusFilter === 'Selesai'
+        ? statusInfo.type === 'Selesai'
+        : statusFilter === 'Lupa Checkout'
+        ? statusInfo.type === 'Lupa Checkout'
+        : statusFilter === 'Izin'
+        ? statusInfo.type === 'Izin'
         : statusFilter === 'Alpa'
-        ? isAlpa
+        ? statusInfo.type === 'Alpa'
         : true;
 
     return matchesSearch && matchesStatus;
@@ -162,11 +253,52 @@ export default function AdminDashboard() {
     return matchesSearch && matchesStatus;
   });
 
+  // Lazy Loaded Data Slices
+  const displayedAbsensi = filteredAbsensi.slice(0, visibleCount);
+  const displayedIzin = filteredIzin.slice(0, visibleCount);
+  const currentTotal = activeTab === 'presensi' ? filteredAbsensi.length : filteredIzin.length;
+  const hasMore = visibleCount < currentTotal;
+
+  // Infinite Scroll & Lazy Load via Intersection Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setVisibleCount((prev) => prev + CHUNK_SIZE);
+            setIsLoadingMore(false);
+          }, 180);
+        }
+      },
+      { threshold: 0.1, rootMargin: '150px' }
+    );
+
+    const target = observerTargetRef.current;
+    if (target) observer.observe(target);
+
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [hasMore, isLoadingMore, visibleCount, activeTab]);
+
+  const handleManualLoadMore = () => {
+    if (hasMore && !isLoadingMore) {
+      setIsLoadingMore(true);
+      setTimeout(() => {
+        setVisibleCount((prev) => prev + CHUNK_SIZE);
+        setIsLoadingMore(false);
+      }, 150);
+    }
+  };
+
   // Quick Stats Calculation
   const totalAbsensi = absensiRecords.length;
-  const alpaCount = absensiRecords.filter((r) => (r.status || '').toLowerCase().includes('alpa')).length;
-  const completedCount = absensiRecords.filter((r) => r.waktuKeluar && r.waktuKeluar !== '-' && r.waktuKeluar !== '' && !(r.status || '').toLowerCase().includes('alpa')).length;
-  const activeCount = totalAbsensi - completedCount - alpaCount;
+  const activeCount = absensiRecords.filter((r) => getAbsensiStatusInfo(r).type === 'Aktif').length;
+  const completedCount = absensiRecords.filter((r) => getAbsensiStatusInfo(r).type === 'Selesai').length;
+  const lupaCount = absensiRecords.filter((r) => getAbsensiStatusInfo(r).type === 'Lupa Checkout').length;
+  const izinPresensiCount = absensiRecords.filter((r) => getAbsensiStatusInfo(r).type === 'Izin').length;
+  const alpaCount = absensiRecords.filter((r) => getAbsensiStatusInfo(r).type === 'Alpa').length;
 
   const totalIzin = izinRecords.length;
   const pendingIzinCount = izinRecords.filter((i) => (i.statusPersetujuan || i.status || '').includes('Menunggu')).length;
@@ -304,9 +436,10 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* 3. Stat Cards - Compact 2x2 Grid for Mobile */}
+      {/* 3. Stat Cards - Responsive Grid */}
       {activeTab === 'presensi' ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+          {/* 1. Total */}
           <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase">Total</p>
@@ -315,14 +448,16 @@ export default function AdminDashboard() {
             <Users className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
           </div>
 
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-amber-200 shadow-xs flex items-center justify-between">
+          {/* 2. Sedang Piket (Aktif) */}
+          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-blue-200 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-amber-700 uppercase">Aktif</p>
-              <p className="text-lg sm:text-xl font-extrabold text-amber-700 mt-0.5">{activeCount}</p>
+              <p className="text-[9.5px] sm:text-[10px] font-bold text-blue-700 uppercase">Sedang Piket</p>
+              <p className="text-lg sm:text-xl font-extrabold text-blue-700 mt-0.5">{activeCount}</p>
             </div>
-            <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
+            <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
           </div>
 
+          {/* 3. Selesai Piket */}
           <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-emerald-200 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-[9.5px] sm:text-[10px] font-bold text-emerald-700 uppercase">Selesai</p>
@@ -331,6 +466,25 @@ export default function AdminDashboard() {
             <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
           </div>
 
+          {/* 4. Lupa Checkout */}
+          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-amber-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p className="text-[9.5px] sm:text-[10px] font-bold text-amber-800 uppercase">Lupa Checkout</p>
+              <p className="text-lg sm:text-xl font-extrabold text-amber-800 mt-0.5">{lupaCount}</p>
+            </div>
+            <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
+          </div>
+
+          {/* 5. Izin (Ganti Hari) */}
+          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-purple-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p className="text-[9.5px] sm:text-[10px] font-bold text-purple-700 uppercase">Izin Ganti Hari</p>
+              <p className="text-lg sm:text-xl font-extrabold text-purple-700 mt-0.5">{izinPresensiCount}</p>
+            </div>
+            <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+          </div>
+
+          {/* 6. Alpa */}
           <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-rose-200 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-[9.5px] sm:text-[10px] font-bold text-rose-700 uppercase">Alpa</p>
@@ -395,6 +549,8 @@ export default function AdminDashboard() {
                 { key: 'Semua', label: 'Semua' },
                 { key: 'Aktif', label: 'Sedang Piket' },
                 { key: 'Selesai', label: 'Selesai' },
+                { key: 'Lupa Checkout', label: 'Lupa Checkout' },
+                { key: 'Izin', label: 'Izin (Ganti Hari)' },
                 { key: 'Alpa', label: 'Alpa' }
               ]
             : [
@@ -457,9 +613,9 @@ export default function AdminDashboard() {
           <>
             {/* MOBILE CARDS VIEW (< md) */}
             <div className="grid grid-cols-1 gap-3 md:hidden">
-              {filteredAbsensi.map((item, idx) => {
-                const isAlpa = (item.status || '').toLowerCase().includes('alpa');
-                const isFinished = Boolean(item.waktuKeluar && item.waktuKeluar !== '-' && item.waktuKeluar !== '') && !isAlpa;
+              {displayedAbsensi.map((item, idx) => {
+                const statusInfo = getAbsensiStatusInfo(item);
+                const isFinished = statusInfo.type === 'Selesai';
 
                 return (
                   <div key={item.id || idx} className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs space-y-2.5">
@@ -469,15 +625,10 @@ export default function AdminDashboard() {
                         <div className="text-[10.5px] font-mono text-slate-500">NIM: {item.userId || '-'}</div>
                       </div>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex-shrink-0 ${
-                          isAlpa
-                            ? 'bg-rose-50 text-rose-700 border-rose-200'
-                            : isFinished
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-200'
-                        }`}
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex-shrink-0 flex items-center gap-1.5 ${statusInfo.badgeClass}`}
                       >
-                        {isAlpa ? 'Alpa' : isFinished ? 'Selesai' : 'Sedang Piket'}
+                        <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotClass}`} />
+                        {statusInfo.label}
                       </span>
                     </div>
 
@@ -488,8 +639,8 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/50">
                         <span className="text-slate-500">Keluar:</span>
-                        <span className={isFinished ? 'font-semibold text-slate-800' : 'text-amber-700 italic'}>
-                          {isFinished ? formatDateTimeDisplay(item.waktuKeluar) : 'Belum Checkout'}
+                        <span className={isFinished ? 'font-semibold text-slate-800' : statusInfo.type === 'Lupa Checkout' ? 'text-amber-700 font-semibold' : 'text-slate-500 italic'}>
+                          {isFinished ? formatDateTimeDisplay(item.waktuKeluar) : statusInfo.type === 'Lupa Checkout' ? 'Tidak Checkout' : statusInfo.type === 'Alpa' || statusInfo.type === 'Izin' ? '-' : 'Belum Checkout'}
                         </span>
                       </div>
                     </div>
@@ -559,9 +710,9 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredAbsensi.map((item, idx) => {
-                      const isAlpa = (item.status || '').toLowerCase().includes('alpa');
-                      const isFinished = Boolean(item.waktuKeluar && item.waktuKeluar !== '-' && item.waktuKeluar !== '') && !isAlpa;
+                    {displayedAbsensi.map((item, idx) => {
+                      const statusInfo = getAbsensiStatusInfo(item);
+                      const isFinished = statusInfo.type === 'Selesai';
 
                       return (
                         <tr key={item.id || idx} className="hover:bg-slate-50/80 transition">
@@ -572,15 +723,10 @@ export default function AdminDashboard() {
 
                           <td className="py-3 px-4">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                isAlpa
-                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                  : isFinished
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-amber-50 text-amber-800 border-amber-200'
-                              }`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.badgeClass}`}
                             >
-                              {isAlpa ? 'Alpa' : isFinished ? 'Selesai' : 'Sedang Piket'}
+                              <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotClass}`} />
+                              {statusInfo.label}
                             </span>
                           </td>
 
@@ -589,8 +735,8 @@ export default function AdminDashboard() {
                           </td>
 
                           <td className="py-3 px-4 whitespace-nowrap">
-                            <span className={isFinished ? 'text-slate-800 font-medium' : 'text-amber-700 italic'}>
-                              {isFinished ? formatDateTimeDisplay(item.waktuKeluar) : 'Belum Checkout'}
+                            <span className={isFinished ? 'text-slate-800 font-medium' : statusInfo.type === 'Lupa Checkout' ? 'text-amber-800 font-semibold' : 'text-slate-400 italic'}>
+                              {isFinished ? formatDateTimeDisplay(item.waktuKeluar) : statusInfo.type === 'Lupa Checkout' ? 'Tidak Checkout' : statusInfo.type === 'Alpa' || statusInfo.type === 'Izin' ? '-' : 'Belum Checkout'}
                             </span>
                           </td>
 
@@ -663,7 +809,7 @@ export default function AdminDashboard() {
           <>
             {/* MOBILE CARDS VIEW (< md) for Izin Approvals */}
             <div className="grid grid-cols-1 gap-3 md:hidden">
-              {filteredIzin.map((item, idx) => {
+              {displayedIzin.map((item, idx) => {
                 const rowId = item.rowId || item.id || idx + 2;
                 const status = item.statusPersetujuan || item.status || 'Menunggu Persetujuan';
                 const isPending = status === 'Menunggu Persetujuan';
@@ -754,7 +900,7 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredIzin.map((item, idx) => {
+                    {displayedIzin.map((item, idx) => {
                       const rowId = item.rowId || item.id || idx + 2;
                       const status = item.statusPersetujuan || item.status || 'Menunggu Persetujuan';
                       const isPending = status === 'Menunggu Persetujuan';
@@ -832,6 +978,37 @@ export default function AdminDashboard() {
             </div>
           </>
         )
+      )}
+
+      {/* 7. Lazy Load Infinite Sentinel & Status Indicator */}
+      {currentTotal > 0 && (
+        <div ref={observerTargetRef} className="pt-3 pb-1 flex flex-col items-center justify-center gap-2">
+          {hasMore ? (
+            <button
+              onClick={handleManualLoadMore}
+              disabled={isLoadingMore}
+              className="px-4 py-2 rounded-xl bg-white hover:bg-blue-50 text-blue-600 border border-slate-200 text-xs font-semibold shadow-xs flex items-center gap-2 transition active:scale-95 disabled:opacity-60 cursor-pointer"
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                  <span>Memuat data berikutnya...</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  <span>
+                    Muat Lebih Banyak ({currentTotal - (activeTab === 'presensi' ? displayedAbsensi.length : displayedIzin.length)} data tersisa)
+                  </span>
+                </>
+              )}
+            </button>
+          ) : (
+            <p className="text-[11px] text-slate-400 font-medium">
+              Menampilkan seluruh {currentTotal} data
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

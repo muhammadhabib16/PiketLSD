@@ -203,7 +203,7 @@ export default function Riwayat() {
         {/* Filter Chips with Smooth Touch Scroll */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs no-scrollbar">
           {(activeTab === 'absensi'
-            ? ['Semua', 'Masuk', 'Keluar', 'Hadir']
+            ? ['Semua', 'Hadir', 'Selesai', 'Lupa Checkout', 'Izin', 'Alpa']
             : ['Semua', 'Menunggu Persetujuan', 'Disetujui', 'Ditolak']
           ).map((item) => (
             <button
@@ -247,8 +247,11 @@ export default function Riwayat() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredAbsensi.map((record, index) => {
-              const isMasuk = (record.status || '').toLowerCase().includes('masuk');
-              const isKeluar = (record.status || '').toLowerCase().includes('keluar') || (record.status || '').toLowerCase().includes('selesai');
+              const rawSt = (record.status || '').toLowerCase();
+              const isIzin = rawSt.includes('izin') || rawSt.includes('ganti hari');
+              const isAlpa = rawSt.includes('alpa');
+              const isKeluar = rawSt.includes('keluar') || rawSt.includes('selesai');
+              const isLupa = rawSt.includes('lupa') || rawSt.includes('tidak checkout');
               const isFinished = Boolean(record.waktuKeluar && record.waktuKeluar !== '-' && record.waktuKeluar !== '');
 
               return (
@@ -266,14 +269,18 @@ export default function Riwayat() {
 
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex-shrink-0 ${
-                          isKeluar
+                          isIzin
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : isAlpa
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : isLupa
+                            ? 'bg-amber-50 text-amber-800 border-amber-300'
+                            : isKeluar || isFinished
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : isMasuk || (record.status || '').toLowerCase().includes('hadir')
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                            : 'bg-blue-50 text-blue-700 border-blue-200'
                         }`}
                       >
-                        {record.status || 'Hadir'}
+                        {record.status || (isFinished ? 'Selesai Piket' : 'Hadir')}
                       </span>
                     </div>
 

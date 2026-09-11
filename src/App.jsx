@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AttendanceProvider } from './context/AttendanceContext';
+import { RefreshCw } from 'lucide-react';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
+import Footer from './components/Footer';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AbsenForm from './pages/AbsenForm';
@@ -10,8 +12,10 @@ import Sukses from './pages/Sukses';
 import Riwayat from './pages/Riwayat';
 import Jadwal from './pages/Jadwal';
 import FormIzin from './pages/FormIzin';
-import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Lazy load the Admin Panel bundle on-demand
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 export default function App() {
   return (
@@ -25,8 +29,8 @@ export default function App() {
           {/* Top Header */}
           <Header />
 
-          {/* Main App Viewport with safe mobile bottom spacing */}
-          <main className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex-1 flex flex-col pt-2.5 sm:pt-4 md:pt-6 pb-24 md:pb-8">
+          {/* Main App Viewport */}
+          <main className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex-1 flex flex-col pt-2.5 sm:pt-4 md:pt-6 pb-8">
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
@@ -34,7 +38,16 @@ export default function App() {
                 path="/admin"
                 element={
                   <ProtectedRoute requireAdmin={true}>
-                    <AdminDashboard />
+                    <Suspense
+                      fallback={
+                        <div className="py-20 text-center space-y-3 bg-white rounded-3xl border border-slate-200 p-8 shadow-xs max-w-md mx-auto my-12">
+                          <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+                          <p className="text-xs text-slate-500 font-medium">Memuat Panel Admin LSD...</p>
+                        </div>
+                      }
+                    >
+                      <AdminDashboard />
+                    </Suspense>
                   </ProtectedRoute>
                 }
               />
@@ -94,6 +107,11 @@ export default function App() {
             </Routes>
           </main>
 
+          {/* Global Institutional Footer (with bottom padding for mobile navigation bar) */}
+          <div className="pb-16 md:pb-0">
+            <Footer />
+          </div>
+
           {/* Mobile-Only Bottom Navigation */}
           <BottomNav />
 
@@ -102,4 +120,5 @@ export default function App() {
     </AttendanceProvider>
   );
 }
+
 
