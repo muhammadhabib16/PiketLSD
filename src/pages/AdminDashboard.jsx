@@ -23,7 +23,10 @@ import {
   ArrowLeft,
   AlertTriangle,
   CalendarCheck,
-  ChevronDown
+  ChevronDown,
+  CalendarRange,
+  Filter,
+  RotateCcw
 } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
 
@@ -57,15 +60,18 @@ export default function AdminDashboard() {
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
+  const [timeFilter, setTimeFilter] = useState('semua'); // 'semua' | 'hari_ini' | 'minggu_ini' | 'bulan_ini' | 'kustom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     fetchAdminData();
   }, [userAccount?.userId, endpointUrl]);
 
-  // Reset lazy load counter when tab, search or filter changes
+  // Reset lazy load counter when tab, search or any filter changes
   useEffect(() => {
     setVisibleCount(CHUNK_SIZE);
-  }, [activeTab, searchTerm, statusFilter]);
+  }, [activeTab, searchTerm, statusFilter, timeFilter, startDate, endDate]);
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -212,6 +218,79 @@ export default function AdminDashboard() {
     }
   };
 
+  // Parse diverse date string formats safely
+  const parseRecordDate = (dateVal) => {
+    if (!dateVal || dateVal === '-' || dateVal === '') return null;
+    if (dateVal instanceof Date && !isNaN(dateVal.getTime())) return dateVal;
+
+    if (typeof dateVal === 'string') {
+      const clean = dateVal.trim();
+      // Format YYYY-MM-DD or ISO
+      if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+        const d = new Date(clean.replace(' ', 'T'));
+        if (!isNaN(d.getTime())) return d;
+      }
+      // Format DD/MM/YYYY or DD-MM-YYYY
+      const ddmmyyyy = clean.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+      if (ddmmyyyy) {
+        const d = new Date(parseInt(ddmmyyyy[3], 10), parseInt(ddmmyyyy[2], 10) - 1, parseInt(ddmmyyyy[1], 10));
+        if (!isNaN(d.getTime())) return d;
+      }
+      const generic = new Date(clean);
+      if (!isNaN(generic.getTime())) return generic;
+    }
+    return null;
+  };
+
+  // Check if a record date matches the active time filter
+  const isRecordInTimeRange = (rawDate) => {
+    if (timeFilter === 'semua') return true;
+    const d = parseRecordDate(rawDate);
+    if (!d) return false;
+
+    const now = new Date();
+
+    if (timeFilter === 'hari_ini') {
+      return (
+        d.getDate() === now.getDate() &&
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      );
+    }
+
+    if (timeFilter === 'minggu_ini') {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(now.getDate() - 7);
+      oneWeekAgo.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      return d >= oneWeekAgo && d <= endOfToday;
+    }
+
+    if (timeFilter === 'bulan_ini') {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+
+    if (timeFilter === 'kustom') {
+      let matchesStart = true;
+      let matchesEnd = true;
+
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchesStart = d >= start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchesEnd = d <= end;
+      }
+      return matchesStart && matchesEnd;
+    }
+
+    return true;
+  };
+
   // Filtered Absensi Records
   const filteredAbsensi = absensiRecords.filter((item) => {
     const matchesSearch =
@@ -236,7 +315,9 @@ export default function AdminDashboard() {
         ? statusInfo.type === 'Alpa'
         : true;
 
-    return matchesSearch && matchesStatus;
+    const matchesTime = isRecordInTimeRange(item.waktuMasuk || item.tanggal || item.timestamp);
+
+    return matchesSearch && matchesStatus && matchesTime;
   });
 
   // Filtered Izin Records
@@ -250,7 +331,9 @@ export default function AdminDashboard() {
     const matchesStatus =
       statusFilter === 'Semua' || statusPersetujuan.toLowerCase().includes(statusFilter.toLowerCase());
 
-    return matchesSearch && matchesStatus;
+    const matchesTime = isRecordInTimeRange(item.tanggalIzin || item.tanggalPengganti || item.timestamp);
+
+    return matchesSearch && matchesStatus && matchesTime;
   });
 
   // Lazy Loaded Data Slices
@@ -529,7 +612,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* 4. Search & Filter Bar */}
+      {/* 4. Search & Status Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="relative flex-1">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -542,11 +625,11 @@ export default function AdminDashboard() {
           />
         </div>
 
-        {/* Filter Tabs */}
+        {/* Status Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs no-scrollbar">
           {(activeTab === 'presensi'
             ? [
-                { key: 'Semua', label: 'Semua' },
+                { key: 'Semua', label: 'Semua Status' },
                 { key: 'Aktif', label: 'Sedang Piket' },
                 { key: 'Selesai', label: 'Selesai' },
                 { key: 'Lupa Checkout', label: 'Lupa Checkout' },
@@ -554,7 +637,7 @@ export default function AdminDashboard() {
                 { key: 'Alpa', label: 'Alpa' }
               ]
             : [
-                { key: 'Semua', label: 'Semua' },
+                { key: 'Semua', label: 'Semua Status' },
                 { key: 'Menunggu Persetujuan', label: 'Menunggu' },
                 { key: 'Disetujui', label: 'Disetujui' },
                 { key: 'Ditolak', label: 'Ditolak' }
@@ -573,6 +656,121 @@ export default function AdminDashboard() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 4.1. Time Filter Bar */}
+      <div className="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs space-y-2.5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+          {/* Label with Icon */}
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+            <CalendarRange className="w-4 h-4 text-blue-600 flex-shrink-0" />
+            <span>Filter Waktu:</span>
+          </div>
+
+          {/* Time Preset Buttons */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar flex-wrap sm:flex-nowrap">
+            {[
+              { id: 'semua', label: 'Semua Waktu' },
+              { id: 'hari_ini', label: 'Hari Ini' },
+              { id: 'minggu_ini', label: '7 Hari Terakhir' },
+              { id: 'bulan_ini', label: 'Bulan Ini' },
+              { id: 'kustom', label: 'Rentang Kustom' }
+            ].map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => setTimeFilter(preset.id)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition active:scale-95 touch-manipulation flex-shrink-0 ${
+                  timeFilter === preset.id
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80'
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Date Range Selector (expands when 'kustom' is selected) */}
+        {timeFilter === 'kustom' && (
+          <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 animate-fadeIn text-xs">
+            <div className="flex items-center gap-2 flex-1">
+              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:border-blue-500 focus-within:bg-white transition">
+                <span className="text-slate-400 font-medium text-[11px] whitespace-nowrap">Dari:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-transparent border-none text-slate-800 text-xs focus:outline-none font-medium"
+                />
+              </div>
+
+              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:border-blue-500 focus-within:bg-white transition">
+                <span className="text-slate-400 font-medium text-[11px] whitespace-nowrap">Sampai:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-transparent border-none text-slate-800 text-xs focus:outline-none font-medium"
+                />
+              </div>
+            </div>
+
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold flex items-center justify-center gap-1 transition active:scale-95"
+                title="Hapus filter rentang tanggal"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Tanggal</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Active Filter Indicator / Reset Summary Bar */}
+        {(searchTerm || statusFilter !== 'Semua' || timeFilter !== 'semua' || startDate || endDate) && (
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+            <div className="flex items-center gap-1.5 text-slate-600 flex-wrap">
+              <span className="font-semibold text-slate-700">Filter Aktif:</span>
+              {searchTerm && (
+                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                  Cari: "{searchTerm}"
+                </span>
+              )}
+              {statusFilter !== 'Semua' && (
+                <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+                  Status: {statusFilter}
+                </span>
+              )}
+              {timeFilter !== 'semua' && (
+                <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  Waktu: {timeFilter === 'hari_ini' ? 'Hari Ini' : timeFilter === 'minggu_ini' ? '7 Hari Terakhir' : timeFilter === 'bulan_ini' ? 'Bulan Ini' : startDate || endDate ? `${startDate || '...'} s/d ${endDate || '...'}` : 'Kustom'}
+                </span>
+              )}
+              <span className="text-slate-400 font-medium">
+                ({activeTab === 'presensi' ? filteredAbsensi.length : filteredIzin.length} rekaman cocok)
+              </span>
+            </div>
+
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('Semua');
+                setTimeFilter('semua');
+                setStartDate('');
+                setEndDate('');
+              }}
+              className="text-blue-600 hover:text-blue-800 font-bold hover:underline flex-shrink-0"
+            >
+              Reset Semua Filter
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 5. Alerts */}

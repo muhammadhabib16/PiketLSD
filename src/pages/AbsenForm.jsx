@@ -20,6 +20,7 @@ import {
 import { useAttendance, REQUIRED_PIKET_DURATION_MS } from '../context/AttendanceContext';
 import { useGeolocation } from '../hooks/useGeolocation';
 import LocationBadge from '../components/LocationBadge';
+import { compressImageAspectRatio } from '../utils/imageCompressor';
 
 export default function AbsenForm() {
   const navigate = useNavigate();
@@ -177,12 +178,19 @@ export default function AbsenForm() {
     }
 
     setSubmitting(true);
-    setSubmitStep('Memproses foto & mengirim presensi...');
+    setSubmitStep('Mengompres foto HD (anti-distorsi)...');
 
     try {
-      const base64Data = capturedImage.includes(',')
-        ? capturedImage.split(',')[1]
-        : capturedImage;
+      // 1. Proportional Canvas Compression strictly preserving aspect ratio (anti-melar / anti-gepeng)
+      const compressed = await compressImageAspectRatio(capturedImage, {
+        maxDimension: 960,
+        quality: 0.80
+      });
+
+      const base64Data = compressed.base64;
+      const previewUrl = compressed.dataUrl;
+
+      setSubmitStep('Mengunggah presensi ke server...');
 
       let payload;
       if (!isSessionActive) {
@@ -195,7 +203,7 @@ export default function AbsenForm() {
           imageBytes: base64Data,
           imageName: `Piket_Masuk_${cleanId}_${Date.now()}.jpg`,
           mimeType: 'image/jpeg',
-          previewUrl: capturedImage
+          previewUrl: previewUrl
         };
       } else {
         payload = {
@@ -205,7 +213,7 @@ export default function AbsenForm() {
           imageBytes: base64Data,
           imageName: `Piket_Keluar_${cleanId}_${Date.now()}.jpg`,
           mimeType: 'image/jpeg',
-          previewUrl: capturedImage
+          previewUrl: previewUrl
         };
       }
 
