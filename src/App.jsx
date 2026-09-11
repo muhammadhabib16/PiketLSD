@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AttendanceProvider } from './context/AttendanceContext';
 import { RefreshCw } from 'lucide-react';
 import Header from './components/Header';
@@ -17,108 +17,121 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Lazy load the Admin Panel bundle on-demand
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
+function AppLayout() {
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between relative selection:bg-blue-600 selection:text-white">
+      {/* Subtle Institutional Top Accent (hidden on login) */}
+      {!isLoginPage && (
+        <div className="h-1.5 w-full bg-blue-600 sticky top-0 z-50"></div>
+      )}
+
+      {/* Top Header (hidden on login) */}
+      {!isLoginPage && <Header />}
+
+      {/* Main App Viewport */}
+      <main
+        className={`w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex-1 flex flex-col ${
+          isLoginPage ? 'justify-center py-4' : 'pt-2.5 sm:pt-4 md:pt-6 pb-8'
+        }`}
+      >
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <Suspense
+                  fallback={
+                    <div className="py-20 text-center space-y-3 bg-white rounded-3xl border border-slate-200 p-8 shadow-xs max-w-md mx-auto my-12">
+                      <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+                      <p className="text-xs text-slate-500 font-medium">Memuat Panel Admin LSD...</p>
+                    </div>
+                  }
+                >
+                  <AdminDashboard />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected Assistant Routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/absen"
+            element={
+              <ProtectedRoute>
+                <AbsenForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jadwal"
+            element={
+              <ProtectedRoute>
+                <Jadwal />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/izin"
+            element={
+              <ProtectedRoute>
+                <FormIzin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sukses"
+            element={
+              <ProtectedRoute>
+                <Sukses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/riwayat"
+            element={
+              <ProtectedRoute>
+                <Riwayat />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+
+      {/* Global Institutional Footer (hidden on login) */}
+      {!isLoginPage && (
+        <div className="pb-16 md:pb-0">
+          <Footer />
+        </div>
+      )}
+
+      {/* Mobile-Only Bottom Navigation (hidden on login) */}
+      {!isLoginPage && <BottomNav />}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AttendanceProvider>
       <Router>
-        <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between relative selection:bg-blue-600 selection:text-white">
-          
-          {/* Subtle Institutional Top Accent */}
-          <div className="h-1.5 w-full bg-blue-600 sticky top-0 z-50"></div>
-
-          {/* Top Header */}
-          <Header />
-
-          {/* Main App Viewport */}
-          <main className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex-1 flex flex-col pt-2.5 sm:pt-4 md:pt-6 pb-8">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requireAdmin={true}>
-                    <Suspense
-                      fallback={
-                        <div className="py-20 text-center space-y-3 bg-white rounded-3xl border border-slate-200 p-8 shadow-xs max-w-md mx-auto my-12">
-                          <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
-                          <p className="text-xs text-slate-500 font-medium">Memuat Panel Admin LSD...</p>
-                        </div>
-                      }
-                    >
-                      <AdminDashboard />
-                    </Suspense>
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Protected Assistant Routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/absen"
-                element={
-                  <ProtectedRoute>
-                    <AbsenForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/jadwal"
-                element={
-                  <ProtectedRoute>
-                    <Jadwal />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/izin"
-                element={
-                  <ProtectedRoute>
-                    <FormIzin />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/sukses"
-                element={
-                  <ProtectedRoute>
-                    <Sukses />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/riwayat"
-                element={
-                  <ProtectedRoute>
-                    <Riwayat />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-
-          {/* Global Institutional Footer (with bottom padding for mobile navigation bar) */}
-          <div className="pb-16 md:pb-0">
-            <Footer />
-          </div>
-
-          {/* Mobile-Only Bottom Navigation */}
-          <BottomNav />
-
-        </div>
+        <AppLayout />
       </Router>
     </AttendanceProvider>
   );
 }
-
-

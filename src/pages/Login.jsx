@@ -12,7 +12,7 @@ import {
   Lock
 } from 'lucide-react';
 import { useAttendance } from '../context/AttendanceContext';
-import ShatteredLogo from '../components/ShatteredLogo';
+import InteractiveLogo from '../components/InteractiveLogo';
 import InteractiveDotBackground from '../components/InteractiveDotBackground';
 
 export default function Login() {
@@ -50,7 +50,7 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-[82vh] sm:min-h-[88vh] flex flex-col justify-center items-center py-6 sm:py-10 px-4 sm:px-6 overflow-hidden">
+    <div className="relative min-h-screen flex flex-col justify-center items-center py-8 sm:py-12 px-4 sm:px-6 overflow-hidden">
       {/* Subtle Interactive Particle Canvas */}
       <InteractiveDotBackground />
 
@@ -62,10 +62,9 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-[430px] mx-auto animate-fadeIn">
         {/* Brand Icon & Heading */}
         <div className="text-center space-y-3 mb-6 sm:mb-8">
-          {/* Shattered Shard Animated Logo with subtle glow halo */}
+          {/* Interactive 3D Physics Logo */}
           <div className="flex justify-center relative">
-            <div className="absolute inset-0 bg-blue-500/15 rounded-full blur-xl transform scale-75 pointer-events-none" />
-            <ShatteredLogo size={78} />
+            <InteractiveLogo size={80} />
           </div>
 
           <div className="space-y-1.5">
