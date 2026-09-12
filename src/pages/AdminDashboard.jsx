@@ -87,7 +87,20 @@ export default function AdminDashboard() {
           : Array.isArray(json.data)
           ? json.data
           : [];
-        const izin = Array.isArray(json.dataIzin) ? json.dataIzin : [];
+        const rawIzin = Array.isArray(json.dataIzin) ? json.dataIzin : [];
+        const izin = rawIzin.map((item, idx) => {
+          const status = (item.statusApproval || item.statusPersetujuan || item.status || 'Menunggu Persetujuan').trim();
+          return {
+            ...item,
+            rowId: item.rowId || item.id || idx + 2,
+            tanggalIzin: item.tglBerhalangan || item.tanggalIzin || item.tanggal || '-',
+            tanggalPengganti: item.tglPengganti || item.tanggalPengganti || '-',
+            statusApproval: status,
+            statusPersetujuan: status,
+            status: status,
+            timestamp: item.waktuPengajuan || item.timestamp || '-'
+          };
+        });
 
         setAbsensiRecords(absensi);
         setIzinRecords(izin);
@@ -199,11 +212,15 @@ export default function AdminDashboard() {
       });
 
       if (res.success) {
-        setSuccessMsg(res.message || `Status pengajuan berhasil diubah menjadi ${keputusan}.`);
+        setSuccessMsg(
+          keputusan === 'Disetujui'
+            ? 'Pengajuan izin berhasil Disetujui dan telah dipindahkan dari antrean persetujuan.'
+            : 'Status pengajuan izin berhasil diubah menjadi Ditolak.'
+        );
         setIzinRecords((prev) =>
           prev.map((item) =>
             item.rowId === rowId || item.id === rowId
-              ? { ...item, statusPersetujuan: keputusan, status: keputusan }
+              ? { ...item, statusApproval: keputusan, statusPersetujuan: keputusan, status: keputusan }
               : item
           )
         );
@@ -422,42 +439,52 @@ export default function AdminDashboard() {
   };
 
   const formatDateDisplay = (dateStr) => {
-    if (!dateStr) return '-';
+    if (!dateStr || dateStr === '-' || dateStr === '') return '-';
     try {
-      const [y, m, d] = dateStr.split('-');
-      if (!d) return dateStr;
-      const date = new Date(y, m - 1, d);
-      return date.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
+      if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) {
+        const [y, m, d] = dateStr.trim().split('-');
+        const date = new Date(y, m - 1, d);
+        return date.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+      return dateStr;
     } catch {
       return dateStr;
     }
   };
 
   return (
-    <div className="w-full space-y-3.5 sm:space-y-4 pb-4 animate-fadeIn">
+    <div className="w-full space-y-5 sm:space-y-6 pb-6 animate-fadeIn">
       {/* 1. Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 sm:pb-4 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => navigate('/')}
-              className="p-1 rounded-lg hover:bg-slate-200/60 text-slate-500 transition active:scale-95 touch-manipulation"
+              className="p-1.5 rounded-xl hover:bg-slate-200/60 text-slate-500 transition active:scale-95 touch-manipulation cursor-pointer"
               title="Kembali ke Beranda"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <h2 className="text-base sm:text-xl font-bold text-slate-900">
+            <h2 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight">
               Panel Admin LSD
             </h2>
-            <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
               Admin: {userAccount?.userName}
             </span>
           </div>
-          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-1">
             Pengawasan presensi piket lab dan persetujuan izin terotorisasi
           </p>
         </div>
@@ -466,7 +493,7 @@ export default function AdminDashboard() {
           <button
             onClick={fetchAdminData}
             disabled={loading}
-            className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-blue-600 hover:bg-blue-50 active:scale-95 transition shadow-xs text-xs font-semibold flex items-center gap-1.5 touch-manipulation"
+            className="px-3.5 py-2 rounded-xl bg-white border border-slate-200/90 text-blue-600 hover:bg-blue-50 active:scale-95 transition shadow-xs text-xs font-bold flex items-center gap-1.5 touch-manipulation cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Segarkan</span>
@@ -474,22 +501,22 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 2. Primary Tabs */}
-      <div className="flex items-center gap-1.5 p-1 bg-blue-50/80 rounded-xl border border-blue-200/80">
+      {/* 2. Primary Tabs - Clean Pill Switcher */}
+      <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80">
         <button
           onClick={() => {
             setActiveTab('presensi');
             setStatusFilter('Semua');
           }}
-          className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 touch-manipulation ${
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 touch-manipulation cursor-pointer ${
             activeTab === 'presensi'
-              ? 'bg-white text-blue-600 shadow-xs border border-blue-200'
-              : 'text-blue-700 hover:text-blue-900 hover:bg-blue-100/50'
+              ? 'bg-white text-blue-600 shadow-xs border border-slate-200/70'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
           }`}
         >
-          <Users className="w-3.5 h-3.5 flex-shrink-0" />
+          <Users className="w-4 h-4 flex-shrink-0" />
           <span className="truncate">Rekap Presensi</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[9px] sm:text-[10px] font-semibold bg-blue-100 text-blue-800">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
             {totalAbsensi}
           </span>
         </button>
@@ -497,115 +524,115 @@ export default function AdminDashboard() {
         <button
           onClick={() => {
             setActiveTab('izin');
-            setStatusFilter('Semua');
+            setStatusFilter('Menunggu Persetujuan');
           }}
-          className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 touch-manipulation ${
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 touch-manipulation cursor-pointer ${
             activeTab === 'izin'
-              ? 'bg-white text-blue-600 shadow-xs border border-blue-200'
-              : 'text-blue-700 hover:text-blue-900 hover:bg-blue-100/50'
+              ? 'bg-white text-blue-600 shadow-xs border border-slate-200/70'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
           }`}
         >
-          <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+          <CalendarDays className="w-4 h-4 flex-shrink-0" />
           <span className="truncate">Persetujuan Izin</span>
           {pendingIzinCount > 0 ? (
-            <span className="px-1.5 py-0.2 rounded-full text-[9px] sm:text-[10px] font-bold bg-blue-600 text-white shadow-xs animate-pulse">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white shadow-xs animate-pulse">
               {pendingIzinCount}
             </span>
           ) : (
-            <span className="px-1.5 py-0.2 rounded-full text-[9px] sm:text-[10px] font-semibold bg-blue-100 text-blue-800">
-              {totalIzin}
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+              0
             </span>
           )}
         </button>
       </div>
 
-      {/* 3. Stat Cards - Responsive Grid */}
+      {/* 3. Stat Cards - Responsive Balanced Grid */}
       {activeTab === 'presensi' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           {/* 1. Total */}
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase">Total</p>
-              <p className="text-lg sm:text-xl font-extrabold text-slate-900 mt-0.5">{totalAbsensi}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">{totalAbsensi}</p>
             </div>
             <Users className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
           </div>
 
           {/* 2. Sedang Piket (Aktif) */}
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-blue-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-blue-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-blue-700 uppercase">Sedang Piket</p>
-              <p className="text-lg sm:text-xl font-extrabold text-blue-700 mt-0.5">{activeCount}</p>
+              <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Sedang Piket</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-blue-700 mt-1">{activeCount}</p>
             </div>
             <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
           </div>
 
           {/* 3. Selesai Piket */}
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-emerald-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-emerald-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-emerald-700 uppercase">Selesai</p>
-              <p className="text-lg sm:text-xl font-extrabold text-emerald-700 mt-0.5">{completedCount}</p>
+              <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Selesai</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-1">{completedCount}</p>
             </div>
             <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
           </div>
 
           {/* 4. Lupa Checkout */}
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-amber-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-amber-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-amber-800 uppercase">Lupa Checkout</p>
-              <p className="text-lg sm:text-xl font-extrabold text-amber-800 mt-0.5">{lupaCount}</p>
+              <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Lupa Checkout</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-amber-800 mt-1">{lupaCount}</p>
             </div>
             <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
           </div>
 
           {/* 5. Izin (Ganti Hari) */}
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-purple-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-purple-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-purple-700 uppercase">Izin Ganti Hari</p>
-              <p className="text-lg sm:text-xl font-extrabold text-purple-700 mt-0.5">{izinPresensiCount}</p>
+              <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wider">Izin Ganti Hari</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-purple-700 mt-1">{izinPresensiCount}</p>
             </div>
             <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
           </div>
 
           {/* 6. Alpa */}
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-rose-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-rose-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-rose-700 uppercase">Alpa</p>
-              <p className="text-lg sm:text-xl font-extrabold text-rose-700 mt-0.5">{alpaCount}</p>
+              <p className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">Alpa</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-rose-700 mt-1">{alpaCount}</p>
             </div>
             <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600" />
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-xs flex items-center justify-between">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase">Total</p>
-              <p className="text-lg sm:text-xl font-extrabold text-slate-900 mt-0.5">{totalIzin}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">{totalIzin}</p>
             </div>
             <CalendarDays className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
           </div>
 
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-amber-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-amber-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-amber-700 uppercase">Menunggu</p>
-              <p className="text-lg sm:text-xl font-extrabold text-amber-700 mt-0.5">{pendingIzinCount}</p>
+              <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Menunggu</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-amber-700 mt-1">{pendingIzinCount}</p>
             </div>
             <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
           </div>
 
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-emerald-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-emerald-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-emerald-700 uppercase">Disetujui</p>
-              <p className="text-lg sm:text-xl font-extrabold text-emerald-700 mt-0.5">{approvedIzinCount}</p>
+              <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Disetujui</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-1">{approvedIzinCount}</p>
             </div>
             <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
           </div>
 
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-rose-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-rose-200/80 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[9.5px] sm:text-[10px] font-bold text-rose-700 uppercase">Ditolak</p>
-              <p className="text-lg sm:text-xl font-extrabold text-rose-700 mt-0.5">{rejectedIzinCount}</p>
+              <p className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">Ditolak</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-rose-700 mt-1">{rejectedIzinCount}</p>
             </div>
             <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600" />
           </div>
@@ -613,20 +640,20 @@ export default function AdminDashboard() {
       )}
 
       {/* 4. Search & Status Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Cari nama asisten atau NIM..."
-            className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 shadow-xs transition"
+            className="w-full bg-white border border-slate-200/90 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-xs transition"
           />
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs no-scrollbar">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar pe-4">
           {(activeTab === 'presensi'
             ? [
                 { key: 'Semua', label: 'Semua Status' },
@@ -637,16 +664,16 @@ export default function AdminDashboard() {
                 { key: 'Alpa', label: 'Alpa' }
               ]
             : [
-                { key: 'Semua', label: 'Semua Status' },
-                { key: 'Menunggu Persetujuan', label: 'Menunggu' },
-                { key: 'Disetujui', label: 'Disetujui' },
-                { key: 'Ditolak', label: 'Ditolak' }
+                { key: 'Menunggu Persetujuan', label: `Perlu Persetujuan (${pendingIzinCount})` },
+                { key: 'Disetujui', label: `Disetujui (${approvedIzinCount})` },
+                { key: 'Ditolak', label: `Ditolak (${rejectedIzinCount})` },
+                { key: 'Semua', label: `Semua Status (${totalIzin})` }
               ]
           ).map((tab) => (
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition text-xs active:scale-95 touch-manipulation flex-shrink-0 ${
+              className={`px-3.5 py-2 rounded-xl font-semibold whitespace-nowrap transition text-xs active:scale-95 touch-manipulation flex-shrink-0 cursor-pointer min-h-[36px] ${
                 statusFilter === tab.key
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
@@ -659,16 +686,16 @@ export default function AdminDashboard() {
       </div>
 
       {/* 4.1. Time Filter Bar */}
-      <div className="bg-white rounded-2xl p-2.5 sm:p-3 border border-slate-200 shadow-xs space-y-2.5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           {/* Label with Icon */}
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
             <CalendarRange className="w-4 h-4 text-blue-600 flex-shrink-0" />
             <span>Filter Waktu:</span>
           </div>
 
           {/* Time Preset Buttons */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar pe-4 flex-nowrap">
             {[
               { id: 'semua', label: 'Semua Waktu' },
               { id: 'hari_ini', label: 'Hari Ini' },
@@ -679,7 +706,7 @@ export default function AdminDashboard() {
               <button
                 key={preset.id}
                 onClick={() => setTimeFilter(preset.id)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition active:scale-95 touch-manipulation flex-shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition active:scale-95 touch-manipulation flex-shrink-0 cursor-pointer ${
                   timeFilter === preset.id
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80'
@@ -693,9 +720,9 @@ export default function AdminDashboard() {
 
         {/* Custom Date Range Selector (expands when 'kustom' is selected) */}
         {timeFilter === 'kustom' && (
-          <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 animate-fadeIn text-xs">
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 animate-fadeIn text-xs">
             <div className="flex items-center gap-2 flex-1">
-              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:border-blue-500 focus-within:bg-white transition">
+              <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus-within:border-blue-500 focus-within:bg-white transition">
                 <span className="text-slate-400 font-medium text-[11px] whitespace-nowrap">Dari:</span>
                 <input
                   type="date"
@@ -705,7 +732,7 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:border-blue-500 focus-within:bg-white transition">
+              <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus-within:border-blue-500 focus-within:bg-white transition">
                 <span className="text-slate-400 font-medium text-[11px] whitespace-nowrap">Sampai:</span>
                 <input
                   type="date"
@@ -722,7 +749,7 @@ export default function AdminDashboard() {
                   setStartDate('');
                   setEndDate('');
                 }}
-                className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold flex items-center justify-center gap-1 transition active:scale-95"
+                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
                 title="Hapus filter rentang tanggal"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -734,7 +761,7 @@ export default function AdminDashboard() {
 
         {/* Active Filter Indicator / Reset Summary Bar */}
         {(searchTerm || statusFilter !== 'Semua' || timeFilter !== 'semua' || startDate || endDate) && (
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
             <div className="flex items-center gap-1.5 text-slate-600 flex-wrap">
               <span className="font-semibold text-slate-700">Filter Aktif:</span>
               {searchTerm && (
@@ -765,7 +792,7 @@ export default function AdminDashboard() {
                 setStartDate('');
                 setEndDate('');
               }}
-              className="text-blue-600 hover:text-blue-800 font-bold hover:underline flex-shrink-0"
+              className="text-blue-600 hover:text-blue-800 font-bold hover:underline flex-shrink-0 cursor-pointer"
             >
               Reset Semua Filter
             </button>
@@ -810,13 +837,13 @@ export default function AdminDashboard() {
         ) : (
           <>
             {/* MOBILE CARDS VIEW (< md) */}
-            <div className="grid grid-cols-1 gap-3 md:hidden">
+            <div className="grid grid-cols-1 gap-3.5 md:hidden">
               {displayedAbsensi.map((item, idx) => {
                 const statusInfo = getAbsensiStatusInfo(item);
                 const isFinished = statusInfo.type === 'Selesai';
 
                 return (
-                  <div key={item.id || idx} className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs space-y-2.5">
+                  <div key={item.id || idx} className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <div className="font-bold text-slate-900 text-sm truncate">{item.userName || 'Asisten'}</div>
@@ -830,12 +857,12 @@ export default function AdminDashboard() {
                       </span>
                     </div>
 
-                    <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs space-y-1">
+                    <div className="bg-slate-50/80 rounded-2xl p-3 border border-slate-200/60 text-xs space-y-1.5">
                       <div className="flex items-center justify-between text-[11px]">
                         <span className="text-slate-500">Masuk:</span>
                         <span className="font-semibold text-slate-800">{formatDateTimeDisplay(item.waktuMasuk)}</span>
                       </div>
-                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/50">
+                      <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/50">
                         <span className="text-slate-500">Keluar:</span>
                         <span className={isFinished ? 'font-semibold text-slate-800' : statusInfo.type === 'Lupa Checkout' ? 'text-amber-700 font-semibold' : 'text-slate-500 italic'}>
                           {isFinished ? formatDateTimeDisplay(item.waktuKeluar) : statusInfo.type === 'Lupa Checkout' ? 'Tidak Checkout' : statusInfo.type === 'Alpa' || statusInfo.type === 'Izin' ? '-' : 'Belum Checkout'}
@@ -844,12 +871,12 @@ export default function AdminDashboard() {
                     </div>
 
                     {item.catatan && item.catatan !== '-' && (
-                      <p className="text-xs text-slate-700 bg-slate-50/70 p-2 rounded-lg border border-slate-100 italic line-clamp-2">
+                      <p className="text-xs text-slate-700 bg-slate-50/70 p-2.5 rounded-xl border border-slate-200/60 italic line-clamp-2 leading-relaxed">
                         "{item.catatan}"
                       </p>
                     )}
 
-                    <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                       {item.location && item.location !== '-' ? (
                         <a
                           href={`https://www.google.com/maps?q=${item.location}`}
@@ -857,7 +884,7 @@ export default function AdminDashboard() {
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline flex items-center gap-1 font-mono text-[10.5px] truncate max-w-[150px]"
                         >
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                           <span className="truncate">{item.location}</span>
                         </a>
                       ) : (
@@ -870,7 +897,7 @@ export default function AdminDashboard() {
                             href={item.photoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[10px] border border-blue-200"
+                            className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-semibold text-[10.5px] border border-blue-200/80 hover:bg-blue-100 transition"
                           >
                             Foto Masuk
                           </a>
@@ -880,7 +907,7 @@ export default function AdminDashboard() {
                             href={item.photoUrlKeluar}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px] border border-emerald-200"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-semibold text-[10.5px] border border-emerald-200/80 hover:bg-emerald-100 transition"
                           >
                             Foto Keluar
                           </a>
@@ -893,18 +920,18 @@ export default function AdminDashboard() {
             </div>
 
             {/* DESKTOP TABLE VIEW (>= md) */}
-            <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="hidden md:block bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px]">
+                  <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase font-bold text-[10px] tracking-wider">
                     <tr>
-                      <th className="py-3 px-4">Asisten</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4">Masuk</th>
-                      <th className="py-3 px-4">Keluar</th>
-                      <th className="py-3 px-4">Lokasi</th>
-                      <th className="py-3 px-4">Laporan Inventaris</th>
-                      <th className="py-3 px-4 text-center">Foto</th>
+                      <th className="py-3.5 px-4">Asisten</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      <th className="py-3.5 px-4">Masuk</th>
+                      <th className="py-3.5 px-4">Keluar</th>
+                      <th className="py-3.5 px-4">Lokasi</th>
+                      <th className="py-3.5 px-4">Laporan Inventaris</th>
+                      <th className="py-3.5 px-4 text-center">Foto</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -913,13 +940,13 @@ export default function AdminDashboard() {
                       const isFinished = statusInfo.type === 'Selesai';
 
                       return (
-                        <tr key={item.id || idx} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3 px-4 font-medium">
+                        <tr key={item.id || idx} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3.5 px-4 font-medium">
                             <div className="font-bold text-slate-900">{item.userName || 'Asisten'}</div>
                             <div className="text-[10px] font-mono text-slate-500">NIM: {item.userId || '-'}</div>
                           </td>
 
-                          <td className="py-3 px-4">
+                          <td className="py-3.5 px-4">
                             <span
                               className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.badgeClass}`}
                             >
@@ -928,17 +955,17 @@ export default function AdminDashboard() {
                             </span>
                           </td>
 
-                          <td className="py-3 px-4 text-slate-700 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
                             {formatDateTimeDisplay(item.waktuMasuk)}
                           </td>
 
-                          <td className="py-3 px-4 whitespace-nowrap">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <span className={isFinished ? 'text-slate-800 font-medium' : statusInfo.type === 'Lupa Checkout' ? 'text-amber-800 font-semibold' : 'text-slate-400 italic'}>
                               {isFinished ? formatDateTimeDisplay(item.waktuKeluar) : statusInfo.type === 'Lupa Checkout' ? 'Tidak Checkout' : statusInfo.type === 'Alpa' || statusInfo.type === 'Izin' ? '-' : 'Belum Checkout'}
                             </span>
                           </td>
 
-                          <td className="py-3 px-4">
+                          <td className="py-3.5 px-4">
                             {item.location && item.location !== '-' ? (
                               <a
                                 href={`https://www.google.com/maps?q=${item.location}`}
@@ -946,7 +973,7 @@ export default function AdminDashboard() {
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:underline flex items-center gap-1 font-mono text-[10px]"
                               >
-                                <MapPin className="w-3 h-3 flex-shrink-0" />
+                                <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                                 <span className="truncate max-w-[100px]">{item.location}</span>
                               </a>
                             ) : (
@@ -954,7 +981,7 @@ export default function AdminDashboard() {
                             )}
                           </td>
 
-                          <td className="py-3 px-4 max-w-xs">
+                          <td className="py-3.5 px-4 max-w-xs">
                             {item.catatan && item.catatan !== '-' ? (
                               <p className="text-slate-700 line-clamp-1 italic text-[11px]" title={item.catatan}>
                                 "{item.catatan}"
@@ -964,14 +991,14 @@ export default function AdminDashboard() {
                             )}
                           </td>
 
-                          <td className="py-3 px-4 text-center">
+                          <td className="py-3.5 px-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
                               {item.photoUrl && item.photoUrl.startsWith('http') && (
                                 <a
                                   href={item.photoUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[10px] border border-blue-200"
+                                  className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-semibold text-[10px] border border-blue-200/80 hover:bg-blue-100 transition"
                                 >
                                   Masuk
                                 </a>
@@ -981,7 +1008,7 @@ export default function AdminDashboard() {
                                   href={item.photoUrlKeluar}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px] border border-emerald-200"
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-semibold text-[10px] border border-emerald-200/80 hover:bg-emerald-100 transition"
                                 >
                                   Keluar
                                 </a>
@@ -999,14 +1026,41 @@ export default function AdminDashboard() {
         )
       ) : (
         filteredIzin.length === 0 ? (
-          <div className="py-12 text-center space-y-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
-            <CalendarDays className="w-10 h-10 text-slate-300 mx-auto" />
-            <h4 className="text-xs font-bold text-slate-700">Tidak ada pengajuan izin</h4>
+          <div className="py-12 text-center space-y-3 bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs">
+            {statusFilter === 'Menunggu Persetujuan' ? (
+              <>
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <h4 className="text-sm sm:text-base font-bold text-slate-800">
+                  Semua Pengajuan Izin Telah Diproses
+                </h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                  Tidak ada permohonan izin asisten yang menunggu persetujuan saat ini.
+                </p>
+                {approvedIzinCount > 0 && (
+                  <div className="pt-2">
+                    <button
+                      onClick={() => setStatusFilter('Disetujui')}
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition active:scale-95 cursor-pointer"
+                    >
+                      Lihat {approvedIzinCount} Izin yang Disetujui
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <CalendarDays className="w-10 h-10 text-slate-300 mx-auto" />
+                <h4 className="text-xs sm:text-sm font-bold text-slate-700">Tidak ada pengajuan izin</h4>
+                <p className="text-[11px] text-slate-400">Tidak ditemukan data izin untuk filter yang dipilih.</p>
+              </>
+            )}
           </div>
         ) : (
           <>
             {/* MOBILE CARDS VIEW (< md) for Izin Approvals */}
-            <div className="grid grid-cols-1 gap-3 md:hidden">
+            <div className="grid grid-cols-1 gap-3.5 md:hidden">
               {displayedIzin.map((item, idx) => {
                 const rowId = item.rowId || item.id || idx + 2;
                 const status = item.statusPersetujuan || item.status || 'Menunggu Persetujuan';
@@ -1015,7 +1069,7 @@ export default function AdminDashboard() {
                 const isRowLoading = actionLoadingRow === rowId;
 
                 return (
-                  <div key={rowId} className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs space-y-2.5">
+                  <div key={rowId} className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <div className="font-bold text-slate-900 text-sm truncate">{item.userName || item.nama || 'Asisten'}</div>
@@ -1035,30 +1089,30 @@ export default function AdminDashboard() {
                       </span>
                     </div>
 
-                    <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs space-y-1">
+                    <div className="bg-slate-50/80 rounded-2xl p-3 border border-slate-200/60 text-xs space-y-1.5">
                       <div className="flex items-center justify-between text-[11px]">
                         <span className="text-slate-500">Berhalangan:</span>
                         <span className="font-semibold text-rose-700">{formatDateDisplay(item.tanggalIzin)}</span>
                       </div>
-                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/50">
+                      <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/50">
                         <span className="text-slate-500">Pengganti:</span>
                         <span className="font-semibold text-emerald-700">{formatDateDisplay(item.tanggalPengganti)}</span>
                       </div>
                     </div>
 
                     {item.alasan && (
-                      <p className="text-xs text-slate-700 italic bg-blue-50/40 p-2 rounded-lg border border-blue-100/60 line-clamp-2">
+                      <p className="text-xs text-slate-700 italic bg-blue-50/40 p-2.5 rounded-xl border border-blue-100/60 line-clamp-2 leading-relaxed">
                         "{item.alasan}"
                       </p>
                     )}
 
                     {/* Action Buttons for Mobile */}
                     {isPending ? (
-                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                      <div className="grid grid-cols-2 gap-2.5 pt-1.5 border-t border-slate-100">
                         <button
                           onClick={() => handleApproval(rowId, 'Disetujui')}
                           disabled={isRowLoading}
-                          className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition disabled:opacity-50 touch-manipulation min-h-[40px]"
+                          className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition disabled:opacity-50 touch-manipulation min-h-[42px] cursor-pointer"
                         >
                           {isRowLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                           <span>Setujui</span>
@@ -1067,14 +1121,14 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => handleApproval(rowId, 'Ditolak')}
                           disabled={isRowLoading}
-                          className="py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition disabled:opacity-50 touch-manipulation min-h-[40px]"
+                          className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition disabled:opacity-50 touch-manipulation min-h-[42px] cursor-pointer"
                         >
                           {isRowLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
                           <span>Tolak</span>
                         </button>
                       </div>
                     ) : (
-                      <div className="pt-1 border-t border-slate-100 text-right">
+                      <div className="pt-1.5 border-t border-slate-100 text-right">
                         <span className="text-slate-400 text-[10.5px] italic">Status Selesai</span>
                       </div>
                     )}
@@ -1084,17 +1138,17 @@ export default function AdminDashboard() {
             </div>
 
             {/* DESKTOP TABLE VIEW (>= md) */}
-            <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="hidden md:block bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px]">
+                  <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase font-bold text-[10px] tracking-wider">
                     <tr>
-                      <th className="py-3 px-4">Asisten</th>
-                      <th className="py-3 px-4">Berhalangan</th>
-                      <th className="py-3 px-4">Pengganti</th>
-                      <th className="py-3 px-4">Alasan</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-center">Aksi</th>
+                      <th className="py-3.5 px-4">Asisten</th>
+                      <th className="py-3.5 px-4">Berhalangan</th>
+                      <th className="py-3.5 px-4">Pengganti</th>
+                      <th className="py-3.5 px-4">Alasan</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      <th className="py-3.5 px-4 text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1106,29 +1160,29 @@ export default function AdminDashboard() {
                       const isRowLoading = actionLoadingRow === rowId;
 
                       return (
-                        <tr key={rowId} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3 px-4 font-medium">
+                        <tr key={rowId} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3.5 px-4 font-medium">
                             <div className="font-bold text-slate-900">{item.userName || item.nama || 'Asisten'}</div>
                             <div className="text-[10px] font-mono text-slate-500">NIM: {item.userId || item.nim || '-'}</div>
                           </td>
 
-                          <td className="py-3 px-4 text-rose-700 font-semibold whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-rose-700 font-semibold whitespace-nowrap">
                             {formatDateDisplay(item.tanggalIzin)}
                           </td>
 
-                          <td className="py-3 px-4 text-emerald-700 font-semibold whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-emerald-700 font-semibold whitespace-nowrap">
                             {formatDateDisplay(item.tanggalPengganti)}
                           </td>
 
-                          <td className="py-3 px-4 max-w-xs">
+                          <td className="py-3.5 px-4 max-w-xs">
                             <p className="text-slate-700 italic text-[11px] line-clamp-1" title={item.alasan}>
                               "{item.alasan || '-'}"
                             </p>
                           </td>
 
-                          <td className="py-3 px-4 whitespace-nowrap">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                                 isPending
                                   ? 'bg-amber-50 text-amber-800 border-amber-300'
                                   : isApproved
@@ -1140,24 +1194,24 @@ export default function AdminDashboard() {
                             </span>
                           </td>
 
-                          <td className="py-3 px-4 text-center">
+                          <td className="py-3.5 px-4 text-center">
                             {isPending ? (
                               <div className="flex items-center justify-center gap-1.5">
                                 <button
                                   onClick={() => handleApproval(rowId, 'Disetujui')}
                                   disabled={isRowLoading}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition active:scale-95 disabled:opacity-50"
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
                                 >
-                                  {isRowLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                  {isRowLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                   <span>Setujui</span>
                                 </button>
 
                                 <button
                                   onClick={() => handleApproval(rowId, 'Ditolak')}
                                   disabled={isRowLoading}
-                                  className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition active:scale-95 disabled:opacity-50"
+                                  className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
                                 >
-                                  {isRowLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                                  {isRowLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
                                   <span>Tolak</span>
                                 </button>
                               </div>

@@ -34,28 +34,29 @@ export default function LocationBadge({ latitude, longitude, accuracy, locationS
             type="button"
             onClick={onRefresh}
             disabled={loading}
-            className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 focus:outline-none disabled:opacity-50"
+            className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 focus:outline-none disabled:opacity-50 p-1 -mr-1 rounded-lg hover:bg-blue-50 active:scale-95 touch-manipulation min-h-[32px]"
           >
-            <RotateCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-            Perbarui
+            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Perbarui</span>
           </button>
         </div>
 
-        <p className="text-xs font-mono text-slate-700 mt-1 truncate">
+        <p className="text-xs font-mono text-slate-700 mt-1 truncate" title={locationString}>
           {locationString}
         </p>
 
         {hasCoordinates && accuracy !== null && (
-          <div className="flex items-center gap-2 mt-1 text-[11px]">
+          <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[11px]">
             <span className="text-emerald-700 font-medium">Akurasi: ±{accuracy} meter</span>
             <span className="text-slate-300">•</span>
             <a
               href={`https://www.google.com/maps?q=${latitude},${longitude}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 underline font-medium"
+              className="text-blue-600 hover:text-blue-800 flex items-center gap-1 underline font-medium touch-manipulation py-0.5"
             >
-              Buka Google Maps <ExternalLink className="w-2.5 h-2.5 inline" />
+              <span>Buka Google Maps</span>
+              <ExternalLink className="w-2.5 h-2.5 inline flex-shrink-0" />
             </a>
           </div>
         )}

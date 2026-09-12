@@ -50,7 +50,7 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-center items-center py-8 sm:py-12 px-4 sm:px-6 overflow-hidden">
+    <div className="relative w-full flex-1 flex flex-col justify-center items-center py-6 sm:py-10 px-3.5 sm:px-6 overflow-hidden">
       {/* Subtle Interactive Particle Canvas */}
       <InteractiveDotBackground />
 
@@ -136,7 +136,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPin((prev) => !prev)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 p-1 rounded-xl transition-colors active:scale-95 touch-manipulation cursor-pointer"
+                  className="absolute right-2 top-1.5 text-slate-400 hover:text-slate-700 w-10 h-10 rounded-xl transition-colors active:scale-90 touch-manipulation cursor-pointer flex items-center justify-center"
                   title={showPin ? 'Sembunyikan Password' : 'Tampilkan Password'}
                 >
                   {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

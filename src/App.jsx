@@ -22,19 +22,14 @@ function AppLayout() {
   const isLoginPage = location.pathname === '/login';
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between relative selection:bg-blue-600 selection:text-white">
-      {/* Subtle Institutional Top Accent (hidden on login) */}
-      {!isLoginPage && (
-        <div className="h-1.5 w-full bg-blue-600 sticky top-0 z-50"></div>
-      )}
-
-      {/* Top Header (hidden on login) */}
+    <div className="min-h-screen min-h-[100dvh] bg-slate-50 text-slate-800 flex flex-col justify-between relative selection:bg-blue-600 selection:text-white overflow-x-hidden">
+      {/* Top Floating Navbar (hidden on login) */}
       {!isLoginPage && <Header />}
 
-      {/* Main App Viewport */}
+      {/* Main App Viewport with generous breathing room below floating navbar */}
       <main
-        className={`w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex-1 flex flex-col ${
-          isLoginPage ? 'justify-center py-4' : 'pt-2.5 sm:pt-4 md:pt-6 pb-8'
+        className={`w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col ${
+          isLoginPage ? 'justify-center py-0 px-0' : 'pt-4 sm:pt-6 md:pt-8 pb-32 md:pb-12'
         }`}
       >
         <Routes>
@@ -115,7 +110,7 @@ function AppLayout() {
 
       {/* Global Institutional Footer (hidden on login) */}
       {!isLoginPage && (
-        <div className="pb-16 md:pb-0">
+        <div className="pb-24 md:pb-0">
           <Footer />
         </div>
       )}

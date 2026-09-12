@@ -11,14 +11,14 @@ export default function BottomNav() {
   const isPiketActive = Boolean(piketSession);
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom,8px))] pt-1 pointer-events-none">
-      <div className="max-w-md mx-auto bg-white/95 backdrop-blur-xl rounded-2xl px-2 py-1.5 border border-slate-200/90 shadow-[0_10px_35px_rgba(0,0,0,0.12)] flex items-center justify-between pointer-events-auto">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,12px))] pt-1 pointer-events-none">
+      <div className="max-w-sm mx-auto bg-white/90 backdrop-blur-2xl rounded-full px-2 py-1 border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.12)] flex items-center justify-between pointer-events-auto">
         
         {/* 1. Beranda */}
         <NavLink
           to="/"
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl text-[10px] font-semibold transition-all duration-200 active:scale-95 ${
+            `flex-1 min-h-[44px] flex flex-col items-center justify-center py-1 px-1 rounded-full text-[9.5px] font-semibold transition-all duration-200 active:scale-95 touch-manipulation ${
               isActive
                 ? 'text-blue-600 font-bold bg-blue-50/90'
                 : 'text-slate-500 hover:text-slate-800'
@@ -33,7 +33,7 @@ export default function BottomNav() {
         <NavLink
           to="/jadwal"
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl text-[10px] font-semibold transition-all duration-200 active:scale-95 ${
+            `flex-1 min-h-[44px] flex flex-col items-center justify-center py-1 px-1 rounded-full text-[9.5px] font-semibold transition-all duration-200 active:scale-95 touch-manipulation ${
               isActive
                 ? 'text-blue-600 font-bold bg-blue-50/90'
                 : 'text-slate-500 hover:text-slate-800'
@@ -47,25 +47,27 @@ export default function BottomNav() {
         {/* 3. Primary Center Shutter: Presensi */}
         <NavLink
           to="/absen"
-          className={({ isActive }) =>
-            `flex-1 flex flex-col items-center justify-center -mt-4 mx-0.5 group`
-          }
+          className="flex-1 flex flex-col items-center justify-center -mt-5 mx-0.5 group touch-manipulation min-h-[48px]"
         >
           {({ isActive }) => (
             <div className="flex flex-col items-center">
               <div
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md transition-all duration-200 active:scale-90 ${
+                className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 active:scale-90 ${
                   isPiketActive
-                    ? 'bg-amber-500 text-white shadow-amber-500/25 ring-4 ring-white'
+                    ? 'bg-gradient-to-tr from-amber-500 to-amber-400 text-white shadow-amber-500/35 ring-4 ring-white animate-pulse'
                     : isActive
-                    ? 'bg-blue-600 text-white shadow-blue-600/30 ring-4 ring-white scale-105'
-                    : 'bg-blue-600 text-white shadow-blue-600/25 ring-4 ring-white'
+                    ? 'bg-gradient-to-tr from-blue-700 to-blue-500 text-white shadow-blue-600/35 ring-4 ring-white scale-105'
+                    : 'bg-gradient-to-tr from-blue-600 to-blue-500 text-white shadow-blue-600/30 ring-4 ring-white group-hover:scale-105'
                 }`}
               >
                 <Camera className="w-5 h-5" />
               </div>
-              <span className={`text-[9.5px] font-bold mt-1 transition ${
-                isActive ? 'text-blue-600 font-extrabold' : 'text-slate-600'
+              <span className={`text-[9px] font-bold mt-1 transition ${
+                isPiketActive
+                  ? 'text-amber-700 font-extrabold'
+                  : isActive
+                  ? 'text-blue-600 font-extrabold'
+                  : 'text-slate-600'
               }`}>
                 {isPiketActive ? 'Sesi Piket' : 'Presensi'}
               </span>
@@ -77,7 +79,7 @@ export default function BottomNav() {
         <NavLink
           to="/izin"
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl text-[10px] font-semibold transition-all duration-200 active:scale-95 ${
+            `flex-1 min-h-[44px] flex flex-col items-center justify-center py-1 px-1 rounded-full text-[9.5px] font-semibold transition-all duration-200 active:scale-95 touch-manipulation ${
               isActive
                 ? 'text-blue-600 font-bold bg-blue-50/90'
                 : 'text-slate-500 hover:text-slate-800'
@@ -93,7 +95,7 @@ export default function BottomNav() {
           <NavLink
             to="/admin"
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl text-[10px] font-semibold transition-all duration-200 active:scale-95 ${
+              `flex-1 min-h-[44px] flex flex-col items-center justify-center py-1 px-1 rounded-full text-[9.5px] font-semibold transition-all duration-200 active:scale-95 touch-manipulation ${
                 isActive
                   ? 'text-blue-600 font-bold bg-blue-50/90'
                   : 'text-slate-500 hover:text-slate-800'
@@ -107,7 +109,7 @@ export default function BottomNav() {
           <NavLink
             to="/riwayat"
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl text-[10px] font-semibold transition-all duration-200 active:scale-95 ${
+              `flex-1 min-h-[44px] flex flex-col items-center justify-center py-1 px-1 rounded-full text-[9.5px] font-semibold transition-all duration-200 active:scale-95 touch-manipulation ${
                 isActive
                   ? 'text-blue-600 font-bold bg-blue-50/90'
                   : 'text-slate-500 hover:text-slate-800'
