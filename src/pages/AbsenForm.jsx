@@ -59,7 +59,7 @@ export default function AbsenForm() {
   const isSessionActive = Boolean(piketSession);
   const { latitude, longitude, accuracy, locationString, loading: gpsLoading, error: gpsError, refreshLocation } = useGeolocation(!isSessionActive);
 
-  // Check 14:00 WIB Cutoff for Clock-in (frontend.md Section 2.C)
+  // Check 15:00 WIB Cutoff for Clock-in
   const checkIsPastCutoff = () => {
     try {
       const now = new Date();
@@ -70,10 +70,10 @@ export default function AbsenForm() {
         minute: '2-digit'
       });
       const [h, m] = wibTimeString.split(':').map(Number);
-      return h > 14 || (h === 14 && m > 0);
+      return h > 15 || (h === 15 && m > 0);
     } catch {
       const now = new Date();
-      return now.getHours() > 14 || (now.getHours() === 14 && now.getMinutes() > 0);
+      return now.getHours() > 15 || (now.getHours() === 15 && now.getMinutes() > 0);
     }
   };
 
@@ -154,6 +154,10 @@ export default function AbsenForm() {
     const cleanName = userName.trim();
 
     if (!isSessionActive) {
+      if (checkIsPastCutoff()) {
+        setErrorMessage('Batas waktu presensi masuk telah berakhir (maksimal pukul 15:00 WIB).');
+        return;
+      }
       if (!cleanId || !cleanName) {
         setErrorMessage('Sesi akun tidak valid. Silakan login kembali.');
         return;
@@ -278,19 +282,19 @@ export default function AbsenForm() {
         </div>
       )}
 
-      {/* 14:00 WIB Cutoff Alert Banner (frontend.md Section 2.C) */}
+      {/* 15:00 WIB Cutoff Alert Banner */}
       {isPastCutoff && (
         <div className="p-4 sm:p-5 rounded-3xl bg-amber-50 border border-amber-300 text-amber-950 text-xs sm:text-sm flex items-start gap-3.5 shadow-xs animate-fadeIn">
           <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-amber-900">
-              <span>Pemberitahuan Batas Waktu Piket (&gt; 14:00 WIB)</span>
+              <span>Pemberitahuan Batas Waktu Piket (&gt; 15:00 WIB)</span>
               <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-200 text-amber-900">
                 PENTING
               </span>
             </div>
             <p className="text-[11.5px] sm:text-xs text-amber-800 leading-relaxed">
-              Waktu sekarang telah melewati pukul <strong>14:00 WIB</strong>. Laboratorium tutup pukul <strong>16:00 WIB</strong> dan sesi piket membutuhkan durasi wajib minimal <strong>2 jam</strong>.
+              Waktu sekarang telah melewati pukul <strong>15:00 WIB</strong>. Batas waktu presensi masuk telah berakhir (maksimal pukul 15:00 WIB). Mohon koordinasikan dengan pengurus lab jika ada kendala.
             </p>
           </div>
         </div>

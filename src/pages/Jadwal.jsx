@@ -105,7 +105,7 @@ export default function Jadwal() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-blue-50 leading-relaxed">
-            Wajib piket minimal <strong className="text-white">2 Jam</strong> dengan batas check-in sebelum <strong className="text-white">14:00 WIB</strong>.
+            Wajib piket minimal <strong className="text-white">2 Jam</strong> dengan batas check-in sebelum <strong className="text-white">15:00 WIB</strong>.
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto bg-blue-700/80 px-3.5 py-2 rounded-xl border border-blue-500 text-xs">

@@ -36,7 +36,7 @@
 *   **Kondisi 1: Belum Ada Sesi (Absen Masuk)**
     *   *Elemen UI:* Hanya pratinjau kamera *live*, indikator pencarian lokasi, dan tombol "Mulai Piket" (Tidak ada input nama).
     *   *Payload (JSON):* `userId` & `userName` ditarik otomatis dari `LocalStorage`. 
-    *   *Penanganan Error:* Wajib menampilkan sembulan (*alert/toast*) jika asisten absen lewat pukul 14:00 WIB.
+    *   *Penanganan Error:* Wajib menampilkan sembulan (*alert/toast*) jika asisten absen lewat pukul 15:00 WIB.
 *   **Kondisi 2: Sesi Sedang Berjalan (Absen Keluar)**
     *   *Elemen UI:* Teks "Waktu Mulai: HH:MM", **Timer Hitung Mundur** 2 Jam, Form Laporan (`textarea`), dan kamera *live*.
     *   *Tombol Dinamis:* Abu-abu (*disabled*) selama *timer* > 0. Aktif merah jika *timer* = 0.

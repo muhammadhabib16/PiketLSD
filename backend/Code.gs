@@ -16,7 +16,7 @@
  *    - Matriks jadwal mingguan (Senin - Jumat) daftar asisten piket.
  * 
  * Aturan Bisnis & Validasi:
- * - Batas Masuk: Maksimal pukul 14:00 WIB (Operasional lab selesai 16:00 WIB).
+ * - Batas Masuk: Maksimal pukul 15:00 WIB.
  * - Batas Keluar: Wajib minimal 2 jam durasi piket sejak waktu masuk.
  * - Single-row update: Absen keluar memperbarui baris masuk yang sama (tidak membuat baris duplikat).
  * - Cron Job: Fungsi cekAlpaHarian() mencatat status "Alpa" otomatis bagi yang tidak hadir.
@@ -99,15 +99,15 @@ function doPost(e) {
         throw new Error("Nama asisten wajib dipilih dari master data.");
       }
 
-      // Validasi Batas Waktu Masuk: Maksimal Pukul 14:00 WIB
+      // Validasi Batas Waktu Masuk: Maksimal Pukul 15:00 WIB
       const currentHour = parseInt(Utilities.formatDate(now, timeZone, "HH"), 10);
       const currentMinute = parseInt(Utilities.formatDate(now, timeZone, "mm"), 10);
       
-      // Jika jam > 14 atau (jam == 14 dan menit > 0)
-      if (currentHour > 14 || (currentHour === 14 && currentMinute > 0)) {
+      // Jika jam > 15 atau (jam == 15 dan menit > 0)
+      if (currentHour > 15 || (currentHour === 15 && currentMinute > 0)) {
         return createJsonResponse({
           status: "error",
-          message: "Batas waktu presensi masuk telah berakhir (maksimal pukul 14:00 WIB). Operasional lab selesai pukul 16:00 WIB sehingga kewajiban durasi 2 jam tidak dapat terpenuhi."
+          message: "Batas waktu presensi masuk telah berakhir (maksimal pukul 15:00 WIB)."
         });
       }
 

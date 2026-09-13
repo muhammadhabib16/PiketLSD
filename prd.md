@@ -32,7 +32,7 @@
 * **Dampak:** Mesin audit otomatis tidak akan mencatat asisten tersebut sebagai "Alpa", melainkan "Izin (Ganti Hari)".
 
 ### Fitur 3: Aturan Batas Jam Kerja (*Time-Block & Timer*)
-* **Tindakan:** Server secara mutlak akan memutus (*reject*) permintaan masuk di atas pukul 14:00 WIB, dan menolak permintaan keluar sebelum 2 jam berlalu sejak jam masuk.
+* **Tindakan:** Server secara mutlak akan memutus (*reject*) permintaan masuk di atas pukul 15:00 WIB, dan menolak permintaan keluar sebelum 2 jam berlalu sejak jam masuk.
 
 ### Fitur 4: Audit Alpa Otomatis Bersyarat (*Smart Auto-Penalty*)
 * **Tindakan:** Skrip `cekAlpaHarian()` dieksekusi otomatis (jam 17:00). Ia membandingkan `Jadwal_Piket` dengan `Log_Absensi`. Jika asisten mangkir, sistem akan mengecek `Log_Izin`. Jika ada izin yang sah, sanksi batal. Jika tidak, asisten dicap "Alpa".

@@ -150,7 +150,7 @@ export default function Dashboard() {
           <div className="relative pt-3 border-t border-blue-500/60 flex items-center justify-between text-[11px] sm:text-xs text-blue-100">
             <span>NIM: <strong className="font-mono text-white tracking-wide">{userAccount?.userId || '-'}</strong></span>
             <span className="bg-blue-700/80 px-2.5 py-0.5 rounded-lg border border-blue-500 text-white font-medium">
-              Batas Absen: 14:00 WIB
+              Batas Absen: 15:00 WIB
             </span>
           </div>
         )}
@@ -377,7 +377,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs text-slate-700">
           <div className="flex items-start gap-2.5 bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
             <Clock className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-            <span><strong>Batas Masuk 14:00 WIB:</strong> Presensi masuk maksimal jam 2 siang.</span>
+            <span><strong>Batas Masuk 15:00 WIB:</strong> Presensi masuk maksimal jam 3 sore.</span>
           </div>
 
           <div className="flex items-start gap-2.5 bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
