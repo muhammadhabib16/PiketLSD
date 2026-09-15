@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   MapPin,
   Sparkles,
-  Info
+  Info,
+  X
 } from 'lucide-react';
 import { useAttendance, REQUIRED_PIKET_DURATION_MS } from '../context/AttendanceContext';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -27,15 +28,25 @@ export default function AbsenForm() {
   const {
     userAccount,
     piketSession,
-    submitAttendance
+    startPiketSession,
+    endPiketSession,
+    submitAttendance,
+    isSubmittingAttendance,
+    history,
+    fetchHistory,
+    loadingHistory
   } = useAttendance();
 
   const webcamRef = useRef(null);
+  const errorRef = useRef(null);
 
   // Assistant Identity is locked directly from authenticated userAccount
   const userId = piketSession ? piketSession.userId : userAccount?.userId || '';
   const userName = piketSession ? piketSession.userName : userAccount?.userName || '';
   const [catatan, setCatatan] = useState('');
+
+  // Initial Realtime Verification State
+  const [isVerifyingSession, setIsVerifyingSession] = useState(true);
 
   // Camera State
   const [facingMode, setFacingMode] = useState('user');
@@ -44,10 +55,14 @@ export default function AbsenForm() {
   const [cameraError, setCameraError] = useState(null);
   const [isFlashing, setIsFlashing] = useState(false);
 
-  // Submission State
+  // Submission State (Sabuk Pengaman Tombol)
   const [submitting, setSubmitting] = useState(false);
   const [submitStep, setSubmitStep] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Combined Loading State: Prevents any button spamming or duplicate clicks
+  const isLoading = submitting || isSubmittingAttendance;
 
   // Timer Engine State
   const [remainingTimeMs, setRemainingTimeMs] = useState(0);
@@ -55,9 +70,77 @@ export default function AbsenForm() {
   const [countdownString, setCountdownString] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
 
-  // GPS Geolocation Hook (Only needed for Clock-In)
-  const isSessionActive = Boolean(piketSession);
-  const { latitude, longitude, accuracy, locationString, loading: gpsLoading, error: gpsError, refreshLocation } = useGeolocation(!isSessionActive);
+  // 1. Sync & evaluate latest session from backend doGet on mount
+  useEffect(() => {
+    let isMounted = true;
+    const syncBackendSession = async () => {
+      try {
+        if (userId) {
+          await fetchHistory(userId);
+        }
+      } catch (err) {
+        console.error('Gagal sinkronisasi data riwayat dari server:', err);
+      } finally {
+        if (isMounted) {
+          setIsVerifyingSession(false);
+        }
+      }
+    };
+
+    syncBackendSession();
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+
+  // 2. Evaluasi Data Riwayat Absensi Terakhir (Logika Pintu Tunggal)
+  const userHistory = (history || []).filter((item) => {
+    const itemNim = (item.userId || item.nim || '').toString().trim();
+    return itemNim === userId;
+  });
+  const sesiTerakhir = userHistory.length > 0 ? userHistory[0] : null;
+
+  // Cek apakah ada sesi menggantung dari data doGet backend
+  const isPiketActiveOnBackend = Boolean(
+    sesiTerakhir &&
+      (sesiTerakhir.status === 'Hadir Piket' || sesiTerakhir.status === 'Masuk') &&
+      (!sesiTerakhir.waktuKeluar || sesiTerakhir.waktuKeluar === '-' || sesiTerakhir.waktuKeluar === '')
+  );
+
+  // Status Sesi Tunggal: True jika ada piketSession lokal ATAU sesi aktif di backend
+  const isSessionActive = Boolean(piketSession || isPiketActiveOnBackend);
+
+  // Selaraskan piketSession lokal secara otomatis jika di backend terdeteksi aktif
+  useEffect(() => {
+    if (!piketSession && isPiketActiveOnBackend && sesiTerakhir) {
+      let startTimeMs = Date.now();
+      const timeStr = sesiTerakhir.waktuMasuk || sesiTerakhir.timestamp;
+      if (timeStr) {
+        const parsed = new Date(timeStr.replace(/-/g, '/')).getTime();
+        if (!isNaN(parsed)) {
+          startTimeMs = parsed;
+        }
+      }
+      startPiketSession({
+        userId: userId,
+        userName: sesiTerakhir.userName || userName,
+        startTime: startTimeMs,
+        location: sesiTerakhir.location || '',
+        photoUrl: sesiTerakhir.photoUrl || ''
+      });
+    }
+  }, [piketSession, isPiketActiveOnBackend, sesiTerakhir, userId, userName]);
+
+  // GPS Geolocation Hook (Hanya dibutuhkan saat Clock-In Masuk)
+  const {
+    latitude,
+    longitude,
+    accuracy,
+    locationString,
+    loading: gpsLoading,
+    error: gpsError,
+    refreshLocation
+  } = useGeolocation(!isSessionActive);
 
   // Check 15:00 WIB Cutoff for Clock-in
   const checkIsPastCutoff = () => {
@@ -85,6 +168,16 @@ export default function AbsenForm() {
     'Lab rapi, AC dan lampu telah dimatikan.',
     'Semua perangkat aman, lab telah dikunci.'
   ];
+
+  // Auto-scroll ke alert pesan error jika muncul
+  const showError = (msg) => {
+    setErrorMessage(msg);
+    setTimeout(() => {
+      if (errorRef.current) {
+        errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
 
   // Countdown Engine Effect
   useEffect(() => {
@@ -123,60 +216,67 @@ export default function AbsenForm() {
   };
 
   const toggleFacingMode = () => {
-    setFacingMode(prev => (prev === 'user' ? 'environment' : 'user'));
+    if (isLoading) return;
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
     setCameraReady(false);
   };
 
   const handleCapture = useCallback(() => {
-    if (!webcamRef.current) return;
+    if (!webcamRef.current || isLoading) return;
 
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 300);
 
-    // Capture using the camera's natural aspect ratio to prevent stretching/distortion (gepeng) on mobile
+    // Capture using natural aspect ratio to prevent stretching
     const imageSrc = webcamRef.current.getScreenshot();
     if (imageSrc) {
       setCapturedImage(imageSrc);
       setErrorMessage('');
     }
-  }, [webcamRef]);
+  }, [webcamRef, isLoading]);
 
   const handleRetake = () => {
+    if (isLoading) return;
     setCapturedImage(null);
   };
 
-  // Submit Handler
+  // Submit Handler dengan Penegakan Sabuk Pengaman Tombol (Anti-Double Submit)
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 1. Kunci proteksi ganda langsung dari awal
+    if (isLoading) return;
+
     setErrorMessage('');
+    setSuccessMessage('');
 
     const cleanId = userId.trim();
     const cleanName = userName.trim();
 
     if (!isSessionActive) {
       if (checkIsPastCutoff()) {
-        setErrorMessage('Batas waktu presensi masuk telah berakhir (maksimal pukul 15:00 WIB).');
+        showError('Batas waktu presensi masuk telah berakhir (maksimal pukul 15:00 WIB).');
         return;
       }
       if (!cleanId || !cleanName) {
-        setErrorMessage('Sesi akun tidak valid. Silakan login kembali.');
+        showError('Sesi akun tidak valid. Silakan login kembali.');
         return;
       }
       if (!capturedImage) {
-        setErrorMessage('Wajib mengambil foto selfie kehadiran live sebelum mengirim presensi.');
+        showError('Wajib mengambil foto selfie kehadiran live sebelum mengirim presensi.');
         return;
       }
     } else {
       if (remainingTimeMs > 0) {
-        setErrorMessage(`Durasi piket wajib 2 jam belum tercapai. Sisa waktu: ${countdownString}`);
+        showError(`Durasi piket wajib 2 jam belum tercapai. Sisa waktu: ${countdownString}`);
         return;
       }
       if (!catatan.trim()) {
-        setErrorMessage('Mohon tulis laporan inventaris/kondisi lab sebelum menyelesaikan piket.');
+        showError('Mohon tulis laporan inventaris/kondisi lab sebelum menyelesaikan piket.');
         return;
       }
       if (!capturedImage) {
-        setErrorMessage('Wajib mengambil foto bukti kondisi lab / selfie checkout.');
+        showError('Wajib mengambil foto bukti kondisi lab / selfie checkout.');
         return;
       }
     }
@@ -185,16 +285,20 @@ export default function AbsenForm() {
     setSubmitStep('Mengompres foto HD (anti-distorsi)...');
 
     try {
-      // 1. Proportional Canvas Compression strictly preserving aspect ratio (anti-melar / anti-gepeng)
+      // Kompresi Kanvas Presisi menjaga rasio aspek
       const compressed = await compressImageAspectRatio(capturedImage, {
         maxDimension: 960,
-        quality: 0.80
+        quality: 0.8
       });
 
       const base64Data = compressed.base64;
       const previewUrl = compressed.dataUrl;
 
-      setSubmitStep('Mengunggah presensi ke server...');
+      setSubmitStep(
+        !isSessionActive
+          ? 'Mencatat presensi masuk ke server Google...'
+          : 'Mengirim laporan checkout ke server Google...'
+      );
 
       let payload;
       if (!isSessionActive) {
@@ -221,37 +325,56 @@ export default function AbsenForm() {
         };
       }
 
+      // Kirim ke API Google Apps Script Backend (V6)
       const response = await submitAttendance(payload);
 
+      // 3. Tangani balasan backend & error catching
       if (response.success) {
-        setSubmitStep('Berhasil! Mengalihkan...');
+        setSubmitStep('Berhasil! Mengalihkan ke bukti presensi...');
+        setSuccessMessage(response.message || 'Presensi berhasil dicatat!');
         setTimeout(() => {
           navigate('/sukses');
-        }, 400);
+        }, 450);
       } else {
-        setErrorMessage(response.message || 'Sistem menolak permintaan presensi.');
+        // Tampilkan pesan penolakan langsung dari backend ke layar
+        showError(response.message || 'Sistem menolak permintaan presensi.');
         setSubmitting(false);
       }
     } catch (err) {
-      setErrorMessage('Gagal menghubungi server: ' + err.message);
+      showError('Gagal menghubungi server: ' + (err.message || 'Terjadi kendala jaringan.'));
       setSubmitting(false);
     }
   };
 
   const formatStartTime = (timestamp) => {
     if (!timestamp) return '-';
-    return new Date(timestamp).toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }) + ' WIB';
+    return (
+      new Date(timestamp).toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }) + ' WIB'
+    );
   };
 
   const isTimeUnlocked = remainingTimeMs <= 0;
 
+  // Indikator Transisi Halus saat menyelaraskan sesi pertama kali
+  if (isVerifyingSession && !piketSession && (!history || history.length === 0)) {
+    return (
+      <div className="max-w-md mx-auto my-14 p-8 rounded-3xl bg-white border border-slate-200 shadow-sm text-center space-y-3.5 animate-fadeIn">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+        <h3 className="text-sm font-bold text-slate-900">Menyelaraskan Status Presensi...</h3>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Mengecek data riwayat dan sesi piket aktif ke server Google.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto w-full space-y-5 sm:space-y-6 pb-4 animate-fadeIn">
-      {/* 1. Header Navigation & Title */}
+      {/* 1. Header Navigation & Title (Logika Pintu Tunggal: Mutually Exclusive) */}
       <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-200">
         <div className="min-w-0">
           <h2 className="text-base sm:text-xl font-bold text-slate-900 truncate">
@@ -264,25 +387,55 @@ export default function AbsenForm() {
           </p>
         </div>
 
-        {isSessionActive && (
+        {isSessionActive ? (
           <span className="px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5 flex-shrink-0 shadow-2xs">
             <Clock className="w-3.5 h-3.5 animate-pulse" /> Sedang Piket
+          </span>
+        ) : (
+          <span className="px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-blue-100 text-blue-900 border border-blue-200 flex items-center gap-1.5 flex-shrink-0 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Sesi Siap Masuk
           </span>
         )}
       </div>
 
-      {/* 2. Error & Time Alerts */}
+      {/* 2. Penangkapan & Visibilitas Pesan Error (*Error Catching*) */}
       {errorMessage && (
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs sm:text-sm flex items-start gap-3 animate-shake shadow-xs">
-          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <span className="font-bold block text-rose-950 mb-0.5">Pemberitahuan Sistem:</span>
-            <span>{errorMessage}</span>
+        <div
+          ref={errorRef}
+          role="alert"
+          className="p-4 sm:p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-900 text-xs sm:text-sm flex items-start justify-between gap-3 animate-shake shadow-md"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold block text-rose-950 text-xs sm:text-sm">
+                Pemberitahuan Sistem (Ditolak):
+              </span>
+              <p className="text-rose-800 leading-relaxed font-medium">
+                {errorMessage}
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setErrorMessage('')}
+            className="text-rose-400 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-100 transition flex-shrink-0 cursor-pointer"
+            title="Tutup Pesan"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* 15:00 WIB Cutoff Alert Banner */}
+      {/* Notifikasi Sukses */}
+      {successMessage && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs sm:text-sm flex items-center gap-3 shadow-xs animate-fadeIn">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+          <p className="font-semibold">{successMessage}</p>
+        </div>
+      )}
+
+      {/* 15:00 WIB Cutoff Alert Banner (Hanya ditampilkan saat Masuk) */}
       {isPastCutoff && (
         <div className="p-4 sm:p-5 rounded-3xl bg-amber-50 border border-amber-300 text-amber-950 text-xs sm:text-sm flex items-start gap-3.5 shadow-xs animate-fadeIn">
           <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -300,7 +453,7 @@ export default function AbsenForm() {
         </div>
       )}
 
-      {/* Active Session Info & Countdown Card */}
+      {/* Active Session Info & Countdown Card (Hanya ditampilkan saat Sedang Piket) */}
       {isSessionActive && (
         <div className="rounded-3xl p-4 sm:p-6 bg-amber-50/90 border border-amber-300 shadow-xs space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -311,7 +464,11 @@ export default function AbsenForm() {
               <div>
                 <h3 className="text-xs sm:text-sm font-bold text-slate-900">Sesi Piket Sedang Berjalan</h3>
                 <p className="text-[11px] sm:text-xs text-slate-600">
-                  Masuk: <span className="text-slate-900 font-mono font-semibold">{formatStartTime(piketSession.startTime)}</span> • Berjalan: <span className="text-blue-700 font-bold">{elapsedString}</span>
+                  Masuk:{' '}
+                  <span className="text-slate-900 font-mono font-semibold">
+                    {formatStartTime(piketSession?.startTime)}
+                  </span>{' '}
+                  • Berjalan: <span className="text-blue-700 font-bold">{elapsedString}</span>
                 </p>
               </div>
             </div>
@@ -342,7 +499,6 @@ export default function AbsenForm() {
       {/* 3. Main Camera & Form Grid */}
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 lg:gap-8">
-          
           {/* LEFT: Camera Viewport */}
           <div className="rounded-3xl p-4 sm:p-6 bg-white border border-slate-200/90 shadow-xs space-y-3.5 flex flex-col justify-between">
             <div>
@@ -395,13 +551,14 @@ export default function AbsenForm() {
                   </>
                 )}
 
-                {/* Floating Camera Actions */}
+                {/* Floating Camera Actions (Terkunci saat isLoading) */}
                 <div className="absolute bottom-3 sm:bottom-4 inset-x-0 flex items-center justify-center gap-4 sm:gap-6 z-10 px-3">
                   {!capturedImage && cameraReady && (
                     <button
                       type="button"
+                      disabled={isLoading}
                       onClick={toggleFacingMode}
-                      className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-slate-900 active:scale-90 text-white backdrop-blur-md border border-white/30 flex items-center justify-center transition shadow-lg touch-manipulation cursor-pointer"
+                      className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-slate-900 active:scale-90 text-white backdrop-blur-md border border-white/30 flex items-center justify-center transition shadow-lg touch-manipulation cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       title="Ganti Kamera Depan/Belakang"
                     >
                       <SwitchCamera className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -411,8 +568,9 @@ export default function AbsenForm() {
                   {!capturedImage && cameraReady && (
                     <button
                       type="button"
+                      disabled={isLoading}
                       onClick={handleCapture}
-                      className="w-15 h-15 sm:w-18 sm:h-18 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center shadow-xl border-4 border-white transition touch-manipulation ring-4 ring-blue-500/40 cursor-pointer"
+                      className="w-15 h-15 sm:w-18 sm:h-18 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center shadow-xl border-4 border-white transition touch-manipulation ring-4 ring-blue-500/40 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       title="Ambil Foto"
                     >
                       <Camera className="w-7 h-7 sm:w-8 sm:h-8" />
@@ -422,8 +580,9 @@ export default function AbsenForm() {
                   {capturedImage && (
                     <button
                       type="button"
+                      disabled={isLoading}
                       onClick={handleRetake}
-                      className="px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-900 text-white border border-white/25 backdrop-blur-md flex items-center gap-2 text-xs sm:text-sm font-bold active:scale-95 transition shadow-lg touch-manipulation cursor-pointer"
+                      className="px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-900 text-white border border-white/25 backdrop-blur-md flex items-center gap-2 text-xs sm:text-sm font-bold active:scale-95 transition shadow-lg touch-manipulation cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <RotateCcw className="w-4 h-4 text-rose-400" /> Foto Ulang
                     </button>
@@ -439,13 +598,16 @@ export default function AbsenForm() {
             </p>
           </div>
 
-          {/* RIGHT: Input / Report & GPS */}
+          {/* RIGHT: Input / Report & GPS (Logika Pintu Tunggal: Mutually Exclusive) */}
           <div className="space-y-4 sm:space-y-5 flex flex-col justify-between">
             <div className="space-y-3.5">
-              {/* If Active: Laporan Inventaris Textarea */}
               {isSessionActive ? (
+                /* FORM KELUAR: Laporan Inventaris Textarea (Hanya Tampil Saat Sedang Piket) */
                 <div className="rounded-3xl p-4 sm:p-6 bg-white border border-slate-200/90 shadow-xs space-y-3.5">
-                  <label htmlFor="inputCatatan" className="block text-xs sm:text-sm font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100">
+                  <label
+                    htmlFor="inputCatatan"
+                    className="block text-xs sm:text-sm font-bold text-slate-800 flex items-center justify-between pb-2 border-b border-slate-100"
+                  >
                     <span className="flex items-center gap-1.5">
                       <FileText className="w-4 h-4 text-blue-600" />
                       Laporan Kondisi & Inventaris Lab *
@@ -454,18 +616,19 @@ export default function AbsenForm() {
                       Wajib Diisi
                     </span>
                   </label>
-                  
+
                   <textarea
                     id="inputCatatan"
                     required
                     rows={3}
+                    disabled={isLoading}
                     value={catatan}
                     onChange={(e) => setCatatan(e.target.value)}
                     placeholder="Contoh: 30 PC berfungsi normal, ruangan rapi dan bersih, AC dan lampu telah dimatikan."
-                    className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl p-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition resize-none leading-relaxed"
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl p-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition resize-none leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"
                   />
 
-                  {/* Quick Preset Buttons - Horizontal Swipe Chips on Mobile */}
+                  {/* Quick Preset Buttons */}
                   <div className="space-y-1.5 pt-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                       Template Cepat (Geser & Tap):
@@ -475,8 +638,9 @@ export default function AbsenForm() {
                         <button
                           key={idx}
                           type="button"
+                          disabled={isLoading}
                           onClick={() => setCatatan(tmpl)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-95 text-[11px] font-medium text-blue-700 border border-blue-200/80 transition whitespace-nowrap flex-shrink-0 touch-manipulation shadow-2xs cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-95 text-[11px] font-medium text-blue-700 border border-blue-200/80 transition whitespace-nowrap flex-shrink-0 touch-manipulation shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           + {tmpl.split(',')[0]}
                         </button>
@@ -485,7 +649,7 @@ export default function AbsenForm() {
                   </div>
                 </div>
               ) : (
-                /* GPS Geolocation Verification Badge (Hanya saat Masuk) */
+                /* FORM MASUK: GPS Geolocation Verification Badge (Hanya Tampil Saat Masuk) */
                 <LocationBadge
                   latitude={latitude}
                   longitude={longitude}
@@ -498,15 +662,16 @@ export default function AbsenForm() {
               )}
             </div>
 
-            {/* Submit Action Button */}
+            {/* Submit Action Button (Sabuk Pengaman Tombol & Logika Pintu Tunggal) */}
             <div className="pt-1">
               {!isSessionActive ? (
+                /* TOMBOL HANYA UNTUK ABSEN MASUK */
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition disabled:opacity-50 touch-manipulation min-h-[48px]"
+                  disabled={isLoading || isPastCutoff}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[48px] cursor-pointer"
                 >
-                  {submitting ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin text-white" />
                       <span>{submitStep || 'Mencatat Presensi Masuk...'}</span>
@@ -519,20 +684,21 @@ export default function AbsenForm() {
                   )}
                 </button>
               ) : (
+                /* TOMBOL HANYA UNTUK ABSEN KELUAR */
                 <div className="space-y-1.5">
                   <button
                     type="submit"
-                    disabled={submitting || !isTimeUnlocked}
+                    disabled={isLoading || !isTimeUnlocked}
                     className={`w-full py-3.5 px-6 rounded-2xl font-bold text-xs sm:text-sm tracking-wide shadow-md flex items-center justify-center gap-2 transition active:scale-[0.98] min-h-[48px] touch-manipulation ${
-                      isTimeUnlocked
-                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
+                      isTimeUnlocked && !isLoading
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20 cursor-pointer'
                         : 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed'
                     }`}
                   >
-                    {submitting ? (
+                    {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin text-white" />
-                        <span>{submitStep || 'Mengirim Laporan...'}</span>
+                        <span>{submitStep || 'Mengirim Laporan Checkout...'}</span>
                       </>
                     ) : isTimeUnlocked ? (
                       <>
@@ -554,9 +720,7 @@ export default function AbsenForm() {
                 </div>
               )}
             </div>
-
           </div>
-
         </div>
       </form>
     </div>

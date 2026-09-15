@@ -84,6 +84,7 @@ export function AttendanceProvider({ children }) {
   const [loadingJadwal, setLoadingJadwal] = useState(false);
   const [historyError, setHistoryError] = useState(null);
   const [jadwalError, setJadwalError] = useState(null);
+  const [isSubmittingAttendance, setIsSubmittingAttendance] = useState(false);
 
   // Login handler connected directly to backend GAS API (status: "Login")
   const login = async (nim, pin) => {
@@ -178,8 +179,16 @@ export function AttendanceProvider({ children }) {
     localStorage.setItem('piketSession', JSON.stringify(updated));
   };
 
-  // Submit Attendance to GAS
+  // Submit Attendance to GAS with Anti-Duplicate Mutex Guard
   const submitAttendance = async (payload) => {
+    if (isSubmittingAttendance) {
+      return {
+        success: false,
+        message: 'Permintaan presensi sedang diproses. Mohon tunggu sistem menyelesaikan pengiriman sebelumnya.'
+      };
+    }
+
+    setIsSubmittingAttendance(true);
     const currentId = payload.userId || userAccount?.userId || '';
     const currentName = payload.userName || userAccount?.userName || '';
 
@@ -241,12 +250,26 @@ export function AttendanceProvider({ children }) {
           return updated;
         });
 
-        return { success: true, data: resultData };
+        // Trigger history refresh in background to ensure backend state aligns
+        if (currentId) {
+          fetchHistory(currentId).catch(() => {});
+        }
+
+        return {
+          success: true,
+          data: resultData,
+          message: json.message || (payload.status === 'Masuk' ? 'Presensi masuk piket berhasil dicatat!' : 'Piket selesai dan laporan lab berhasil dikirim!')
+        };
       } else {
-        return { success: false, message: json.message || 'Gagal memproses data di server.' };
+        return {
+          success: false,
+          message: json.message || 'Sistem menolak permintaan presensi.'
+        };
       }
     } catch (err) {
       return { success: false, message: 'Gagal terhubung ke Google Apps Script: ' + err.message };
+    } finally {
+      setIsSubmittingAttendance(false);
     }
   };
 
@@ -422,6 +445,43 @@ export function AttendanceProvider({ children }) {
         setHistory(absensiList);
         setIzinHistory(izinList);
 
+        // Realtime session synchronization with backend records
+        if (effectiveNim) {
+          const userHistory = absensiList.filter(item => {
+            const itemNim = (item.userId || item.nim || '').toString().trim();
+            return itemNim === effectiveNim;
+          });
+          const sesiTerakhir = userHistory.length > 0 ? userHistory[0] : null;
+          const sedangPiket = sesiTerakhir &&
+            (sesiTerakhir.status === 'Hadir Piket' || sesiTerakhir.status === 'Masuk') &&
+            (!sesiTerakhir.waktuKeluar || sesiTerakhir.waktuKeluar === '-' || sesiTerakhir.waktuKeluar === '');
+
+          if (sedangPiket) {
+            let startTimeMs = Date.now();
+            const timeStr = sesiTerakhir.waktuMasuk || sesiTerakhir.timestamp;
+            if (timeStr) {
+              const parsed = new Date(timeStr.replace(/-/g, '/')).getTime();
+              if (!isNaN(parsed)) {
+                startTimeMs = parsed;
+              }
+            }
+            const activeSession = {
+              userId: effectiveNim,
+              userName: sesiTerakhir.userName || userAccount?.userName || effectiveNim,
+              startTime: startTimeMs,
+              startLocation: sesiTerakhir.location || '',
+              startPhotoUrl: sesiTerakhir.photoUrl || '',
+              status: 'SEDANG_PIKET'
+            };
+            setPiketSession(activeSession);
+            localStorage.setItem('piketSession', JSON.stringify(activeSession));
+          } else if (sesiTerakhir && sesiTerakhir.waktuKeluar && sesiTerakhir.waktuKeluar !== '-') {
+            // Sesi terakhir sudah selesai checkout
+            setPiketSession(null);
+            localStorage.removeItem('piketSession');
+          }
+        }
+
         if (json.dataJadwal) {
           const normalized = normalizeJadwal(json.dataJadwal);
           setJadwalList(normalized);
@@ -488,6 +548,7 @@ export function AttendanceProvider({ children }) {
         fastForwardSession,
         lastResult,
         submitAttendance,
+        isSubmittingAttendance,
         submitIzin,
         history,
         izinHistory,
