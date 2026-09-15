@@ -33,6 +33,7 @@ export default function AbsenForm() {
     submitAttendance,
     isSubmittingAttendance,
     history,
+    setHistory,
     fetchHistory,
     loadingHistory
   } = useAttendance();
@@ -60,6 +61,9 @@ export default function AbsenForm() {
   const [submitStep, setSubmitStep] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Optimistic UI Background Sync State
+  const [isSyncingOptimistic, setIsSyncingOptimistic] = useState(false);
 
   // Combined Loading State: Prevents any button spamming or duplicate clicks
   const isLoading = submitting || isSubmittingAttendance;
@@ -240,11 +244,10 @@ export default function AbsenForm() {
     setCapturedImage(null);
   };
 
-  // Submit Handler dengan Penegakan Sabuk Pengaman Tombol (Anti-Double Submit)
+  // Submit Handler: Menggunakan Optimistic UI Khusus Absen Masuk (0 Detik Delay)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1. Kunci proteksi ganda langsung dari awal
     if (isLoading) return;
 
     setErrorMessage('');
@@ -253,6 +256,9 @@ export default function AbsenForm() {
     const cleanId = userId.trim();
     const cleanName = userName.trim();
 
+    // =========================================================================
+    // SKENARIO 1: ABSEN MASUK (OPTIMISTIC UI: RESPONS INSTAN 0 DETIK)
+    // =========================================================================
     if (!isSessionActive) {
       if (checkIsPastCutoff()) {
         showError('Batas waktu presensi masuk telah berakhir (maksimal pukul 15:00 WIB).');
@@ -266,26 +272,119 @@ export default function AbsenForm() {
         showError('Wajib mengambil foto selfie kehadiran live sebelum mengirim presensi.');
         return;
       }
-    } else {
-      if (remainingTimeMs > 0) {
-        showError(`Durasi piket wajib 2 jam belum tercapai. Sisa waktu: ${countdownString}`);
-        return;
+
+      // 1. BUAT BACKUP (Sabuk Pengaman Rollback jika API menolak / offline)
+      const backupHistory = Array.isArray(history) ? [...history] : [];
+      const backupCapturedImage = capturedImage;
+      const nowMs = Date.now();
+      const nowIso = new Date().toISOString();
+      const locString = locationString || (latitude ? `${latitude}, ${longitude}` : '-');
+
+      // 2. OPTIMISTIC UPDATE: Ubah UI seketika ke Form Keluar & Timer tanpa menunggu backend
+      const sesiSementara = {
+        id: 'temp-' + nowMs,
+        userId: cleanId,
+        userName: cleanName,
+        status: 'Hadir Piket',
+        waktuMasuk: nowIso,
+        timestamp: nowIso,
+        waktuKeluar: '-',
+        location: locString,
+        photoUrl: capturedImage,
+        previewUrl: capturedImage,
+        isOptimistic: true
+      };
+
+      // Inisialisasi sesi piket lokal seketika (memicu timer 2 jam langsung berjalan)
+      startPiketSession({
+        userId: cleanId,
+        userName: cleanName,
+        startTime: nowMs,
+        location: locString,
+        photoUrl: capturedImage
+      });
+
+      // Suntikkan sesi sementara ke state history lokal agar Logika Pintu Tunggal merender Form Keluar
+      if (setHistory) {
+        setHistory([sesiSementara, ...backupHistory]);
       }
-      if (!catatan.trim()) {
-        showError('Mohon tulis laporan inventaris/kondisi lab sebelum menyelesaikan piket.');
-        return;
-      }
-      if (!capturedImage) {
-        showError('Wajib mengambil foto bukti kondisi lab / selfie checkout.');
-        return;
-      }
+
+      // Reset foto selfie form masuk dan aktifkan status sinkronisasi latar belakang
+      setCapturedImage(null);
+      setIsSyncingOptimistic(true);
+      setSuccessMessage('Sesi piket berhasil dimulai! Sinkronisasi latar belakang ke server sedang berjalan...');
+
+      // 3. PROSES LATAR BELAKANG (Bekerja diam-diam mengirim data ke Google Sheets)
+      (async () => {
+        try {
+          const compressed = await compressImageAspectRatio(backupCapturedImage, {
+            maxDimension: 960,
+            quality: 0.8
+          });
+
+          const payload = {
+            userId: cleanId,
+            userName: cleanName,
+            status: 'Masuk',
+            catatan: 'Mulai Piket Lab',
+            location: locString,
+            imageBytes: compressed.base64,
+            imageName: `Piket_Masuk_${cleanId}_${nowMs}.jpg`,
+            mimeType: 'image/jpeg',
+            previewUrl: compressed.dataUrl
+          };
+
+          const response = await submitAttendance(payload);
+
+          if (response.success) {
+            // SKENARIO SUKSES: Data berhasil dicatat resmi di server Google
+            setIsSyncingOptimistic(false);
+            setSuccessMessage('✓ Presensi masuk berhasil dicatat ke Google Sheets!');
+            setTimeout(() => setSuccessMessage(''), 5000);
+          } else {
+            // SKENARIO DITOLAK (Batas jam lewat, duplikat, dll): Rollback UI ke kondisi semula
+            endPiketSession();
+            if (setHistory) setHistory(backupHistory);
+            setCapturedImage(backupCapturedImage);
+            setIsSyncingOptimistic(false);
+            showError(response.message || 'Sistem menolak presensi masuk.');
+          }
+        } catch (err) {
+          // SKENARIO KONEKSI TERPUTUS: Rollback UI ke kondisi semula
+          endPiketSession();
+          if (setHistory) setHistory(backupHistory);
+          setCapturedImage(backupCapturedImage);
+          setIsSyncingOptimistic(false);
+          showError(
+            'Koneksi terputus. Gagal menyinkronkan presensi masuk ke server: ' +
+              (err.message || 'Kendala jaringan')
+          );
+        }
+      })();
+
+      return;
+    }
+
+    // =========================================================================
+    // SKENARIO 2: ABSEN KELUAR & LAPORAN INVENTARIS (SYNCHRONOUS SUBMIT)
+    // =========================================================================
+    if (remainingTimeMs > 0) {
+      showError(`Durasi piket wajib 2 jam belum tercapai. Sisa waktu: ${countdownString}`);
+      return;
+    }
+    if (!catatan.trim()) {
+      showError('Mohon tulis laporan inventaris/kondisi lab sebelum menyelesaikan piket.');
+      return;
+    }
+    if (!capturedImage) {
+      showError('Wajib mengambil foto bukti kondisi lab / selfie checkout.');
+      return;
     }
 
     setSubmitting(true);
     setSubmitStep('Mengompres foto HD (anti-distorsi)...');
 
     try {
-      // Kompresi Kanvas Presisi menjaga rasio aspek
       const compressed = await compressImageAspectRatio(capturedImage, {
         maxDimension: 960,
         quality: 0.8
@@ -294,50 +393,28 @@ export default function AbsenForm() {
       const base64Data = compressed.base64;
       const previewUrl = compressed.dataUrl;
 
-      setSubmitStep(
-        !isSessionActive
-          ? 'Mencatat presensi masuk ke server Google...'
-          : 'Mengirim laporan checkout ke server Google...'
-      );
+      setSubmitStep('Mengirim laporan checkout ke server Google...');
 
-      let payload;
-      if (!isSessionActive) {
-        payload = {
-          userId: cleanId,
-          userName: cleanName,
-          status: 'Masuk',
-          catatan: 'Mulai Piket Lab',
-          location: locationString || (latitude ? `${latitude}, ${longitude}` : '-'),
-          imageBytes: base64Data,
-          imageName: `Piket_Masuk_${cleanId}_${Date.now()}.jpg`,
-          mimeType: 'image/jpeg',
-          previewUrl: previewUrl
-        };
-      } else {
-        payload = {
-          userId: cleanId,
-          status: 'Keluar',
-          catatan: catatan.trim(),
-          imageBytes: base64Data,
-          imageName: `Piket_Keluar_${cleanId}_${Date.now()}.jpg`,
-          mimeType: 'image/jpeg',
-          previewUrl: previewUrl
-        };
-      }
+      const payload = {
+        userId: cleanId,
+        status: 'Keluar',
+        catatan: catatan.trim(),
+        imageBytes: base64Data,
+        imageName: `Piket_Keluar_${cleanId}_${Date.now()}.jpg`,
+        mimeType: 'image/jpeg',
+        previewUrl: previewUrl
+      };
 
-      // Kirim ke API Google Apps Script Backend (V6)
       const response = await submitAttendance(payload);
 
-      // 3. Tangani balasan backend & error catching
       if (response.success) {
         setSubmitStep('Berhasil! Mengalihkan ke bukti presensi...');
-        setSuccessMessage(response.message || 'Presensi berhasil dicatat!');
+        setSuccessMessage(response.message || 'Presensi keluar & laporan berhasil dicatat!');
         setTimeout(() => {
           navigate('/sukses');
         }, 450);
       } else {
-        // Tampilkan pesan penolakan langsung dari backend ke layar
-        showError(response.message || 'Sistem menolak permintaan presensi.');
+        showError(response.message || 'Sistem menolak permintaan checkout presensi.');
         setSubmitting(false);
       }
     } catch (err) {
@@ -388,9 +465,16 @@ export default function AbsenForm() {
         </div>
 
         {isSessionActive ? (
-          <span className="px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5 flex-shrink-0 shadow-2xs">
-            <Clock className="w-3.5 h-3.5 animate-pulse" /> Sedang Piket
-          </span>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {isSyncingOptimistic && (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-300 flex items-center gap-1.5 animate-pulse shadow-2xs">
+                <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> Sinkronisasi cloud...
+              </span>
+            )}
+            <span className="px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5 flex-shrink-0 shadow-2xs">
+              <Clock className="w-3.5 h-3.5 animate-pulse" /> Sedang Piket
+            </span>
+          </div>
         ) : (
           <span className="px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-blue-100 text-blue-900 border border-blue-200 flex items-center gap-1.5 flex-shrink-0 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Sesi Siap Masuk
@@ -462,8 +546,15 @@ export default function AbsenForm() {
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-slate-900">Sesi Piket Sedang Berjalan</h3>
-                <p className="text-[11px] sm:text-xs text-slate-600">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900">Sesi Piket Sedang Berjalan</h3>
+                  {isSyncingOptimistic && (
+                    <span className="text-[10px] text-blue-700 bg-blue-100/90 border border-blue-200 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" /> Menyimpan ke Cloud...
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
                   Masuk:{' '}
                   <span className="text-slate-900 font-mono font-semibold">
                     {formatStartTime(piketSession?.startTime)}
@@ -665,23 +756,14 @@ export default function AbsenForm() {
             {/* Submit Action Button (Sabuk Pengaman Tombol & Logika Pintu Tunggal) */}
             <div className="pt-1">
               {!isSessionActive ? (
-                /* TOMBOL HANYA UNTUK ABSEN MASUK */
+                /* TOMBOL HANYA UNTUK ABSEN MASUK (Memicu Optimistic UI Seketika) */
                 <button
                   type="submit"
                   disabled={isLoading || isPastCutoff}
                   className="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[48px] cursor-pointer"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      <span>{submitStep || 'Mencatat Presensi Masuk...'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      <span>Kirim Presensi Masuk Piket</span>
-                    </>
-                  )}
+                  <Send className="w-4 h-4" />
+                  <span>Mulai Piket (Presensi Masuk)</span>
                 </button>
               ) : (
                 /* TOMBOL HANYA UNTUK ABSEN KELUAR */

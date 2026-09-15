@@ -551,6 +551,7 @@ export function AttendanceProvider({ children }) {
         isSubmittingAttendance,
         submitIzin,
         history,
+        setHistory,
         izinHistory,
         jadwalList: jadwalList || defaultJadwalData,
         loadingHistory,
