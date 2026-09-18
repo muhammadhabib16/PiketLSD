@@ -10,7 +10,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requireAdmin && userAccount?.role !== 'Admin') {
+  if (requireAdmin && userAccount?.role?.toLowerCase() !== 'admin') {
     return <Navigate to="/" replace />;
   }
 

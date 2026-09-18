@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import {
@@ -100,7 +100,7 @@ export default function AbsenForm() {
   // 2. Evaluasi Data Riwayat Absensi Terakhir (Logika Pintu Tunggal)
   const userHistory = (history || []).filter((item) => {
     const itemNim = (item.userId || item.nim || '').toString().trim();
-    return itemNim === userId;
+    return itemNim.toLowerCase() === userId.toLowerCase();
   });
   const sesiTerakhir = userHistory.length > 0 ? userHistory[0] : null;
 
@@ -213,11 +213,28 @@ export default function AbsenForm() {
     return () => clearInterval(interval);
   }, [piketSession]);
 
-  const videoConstraints = {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-    facingMode: facingMode
-  };
+  // Deteksi layar HP/Mobile vs Desktop untuk kalibrasi resolusi & rasio kamera
+  const [isMobile, setIsMobile] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Resolusi & Aspect Ratio kamera:
+  // - Pada HP (portrait): Menggunakan resolusi vertikal 3:4 (720x960) agar proporsional dan tidak memotong wajah
+  // - Pada Desktop (landscape): Menggunakan resolusi horizontal 4:3 / 16:9 (1280x720) yang pas dengan webcam PC/Laptop
+  const videoConstraints = useMemo(() => ({
+    facingMode: facingMode,
+    width: isMobile ? { ideal: 720, max: 1080 } : { ideal: 1280, max: 1920 },
+    height: isMobile ? { ideal: 960, max: 1440 } : { ideal: 720, max: 1080 },
+    aspectRatio: isMobile ? { ideal: 3 / 4 } : { ideal: 4 / 3 }
+  }), [facingMode, isMobile]);
 
   const toggleFacingMode = () => {
     if (isLoading) return;
@@ -601,8 +618,8 @@ export default function AbsenForm() {
                 <span className="text-[11px] text-rose-600 font-semibold">*Wajib Foto</span>
               </div>
 
-              {/* Camera Frame (Natural aspect ratio on all mobile and desktop screens) */}
-              <div className="relative w-full aspect-[4/3] max-h-[460px] rounded-2xl overflow-hidden bg-slate-900 border border-slate-300 flex items-center justify-center shadow-inner">
+              {/* Camera Frame: Rasio Responsif 3:4 (Portrait) di HP agar selfie utuh tanpa potong kepala, dan 4:3 di Desktop/Tablet */}
+              <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] max-h-[500px] sm:max-h-[440px] rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-900 border border-slate-300 flex items-center justify-center shadow-inner transition-all duration-300">
                 {isFlashing && (
                   <div className="absolute inset-0 bg-white z-20 pointer-events-none opacity-90 transition-opacity duration-300" />
                 )}
@@ -624,6 +641,8 @@ export default function AbsenForm() {
                       ref={webcamRef}
                       audio={false}
                       screenshotFormat="image/jpeg"
+                      screenshotQuality={0.85}
+                      forceScreenshotSourceSize={true}
                       mirrored={facingMode === 'user'}
                       videoConstraints={videoConstraints}
                       onUserMedia={() => setCameraReady(true)}
@@ -632,6 +651,20 @@ export default function AbsenForm() {
                       }}
                       className="w-full h-full object-cover"
                     />
+
+                    {/* Subtle Viewfinder Frame Guide */}
+                    {cameraReady && (
+                      <div className="absolute inset-5 sm:inset-7 pointer-events-none border border-white/10 rounded-2xl flex flex-col justify-between p-2">
+                        <div className="flex justify-between">
+                          <div className="w-4 h-4 border-t-2 border-l-2 border-white/50 rounded-tl-sm" />
+                          <div className="w-4 h-4 border-t-2 border-r-2 border-white/50 rounded-tr-sm" />
+                        </div>
+                        <div className="flex justify-between">
+                          <div className="w-4 h-4 border-b-2 border-l-2 border-white/50 rounded-bl-sm" />
+                          <div className="w-4 h-4 border-b-2 border-r-2 border-white/50 rounded-br-sm" />
+                        </div>
+                      </div>
+                    )}
 
                     {!cameraReady && (
                       <div className="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center text-white space-y-2">

@@ -449,7 +449,7 @@ export function AttendanceProvider({ children }) {
         if (effectiveNim) {
           const userHistory = absensiList.filter(item => {
             const itemNim = (item.userId || item.nim || '').toString().trim();
-            return itemNim === effectiveNim;
+            return itemNim.toLowerCase() === effectiveNim.toLowerCase();
           });
           const sesiTerakhir = userHistory.length > 0 ? userHistory[0] : null;
           const sedangPiket = sesiTerakhir &&

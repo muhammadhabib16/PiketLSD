@@ -266,7 +266,7 @@ export default function Dashboard() {
         </button>
 
         {/* Card 5 [RBAC]: Panel Admin */}
-        {userAccount?.role === 'Admin' && (
+        {(userAccount?.role === 'Admin' || userAccount?.role?.toLowerCase() === 'admin') && (
           <button
             onClick={() => navigate('/admin')}
             className="group rounded-2xl p-3.5 sm:p-5 bg-blue-700 hover:bg-blue-800 text-white hover:shadow-md text-left transition shadow-xs flex flex-col justify-between min-h-[125px] sm:min-h-[140px] border border-blue-600 active:scale-[0.97] col-span-2 sm:col-span-1 touch-manipulation"

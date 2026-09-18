@@ -40,7 +40,9 @@ export default function Riwayat() {
 
   // Filtered Absensi Records (Privacy locked to current assistant)
   const filteredAbsensi = history.filter((item) => {
-    const matchesUser = !currentNim || (item.userId || '').toString().trim() === currentNim.trim();
+    const itemNim = (item.userId || '').toString().trim().toLowerCase();
+    const targetNim = currentNim.trim().toLowerCase();
+    const matchesUser = !currentNim || itemNim === targetNim;
     if (!matchesUser) return false;
 
     const matchesSearch =
@@ -56,7 +58,9 @@ export default function Riwayat() {
 
   // Filtered Izin Records (Privacy locked to current assistant)
   const filteredIzin = (izinHistory || []).filter((item) => {
-    const matchesUser = !currentNim || (item.userId || item.nim || '').toString().trim() === currentNim.trim();
+    const itemNim = (item.userId || item.nim || '').toString().trim().toLowerCase();
+    const targetNim = currentNim.trim().toLowerCase();
+    const matchesUser = !currentNim || itemNim === targetNim;
     if (!matchesUser) return false;
 
     const matchesSearch =
